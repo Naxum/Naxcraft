@@ -1,0 +1,303 @@
+name: Naxcraft
+main: com.naxville.naxcraft.Naxcraft
+version: 1.0
+website: http://www.naxville.com/dev.php
+authors: 
+  - Naxum
+  - Deltakin
+  - Gomer3261
+
+commands:
+  wg:
+    description: Creation of warpgates.
+    usage: |
+           /<command> <create/delete> <name>
+           /<command> <id> [id]
+           /<command> <link> <gate> <dest1> [dest2...]
+           /<command> <mulitlink> <gate1> <gate2> [gate3...]
+    aliases: warpgate
+    
+  transcend:
+    description: Let's leave this world, baby.
+    usage: |
+           /<command>
+           
+  strike:
+    description: BOOM
+    usage: |
+           /<command> [player]
+           
+  weather:
+    description: Find the weather, set it.
+    usage: |
+           /<command>
+           /<command> thunder [player]
+           /<command> storm [player]
+           /<command> clear [player]
+           
+  help:
+    description: Prints command information.
+    usage: |
+           /<command> [page]
+           /<command> [command name]
+  home:
+    description: Teleports you home.
+    usage: |
+           /<command>
+    
+  ranks:
+    description: Lists all ranks and their prefixes.
+    usage: |
+           /<command>
+           
+  flags:
+    description: Lists all area flags and what they do.
+    usage: |
+           /<command>
+           
+  shrine:
+    description: Going to be replaced by /warp.
+    usage: |
+           /<command> <name>
+
+  warp:
+    description: Allows you to fast-travel to warp gates!
+    usage: |
+           /<command> <name>
+
+  done:
+    description: Removes sponge scaffolding from a creative area.
+    usage: |
+           /<command>
+           
+  wmod:
+    description: Allows for the modification of warps.
+    usage: |
+           /<command> <create/delete/list> <name>
+
+  god:
+    description: Makes a player invurnerable.
+    usage: |
+           /<command> [?] [player]
+           Example: /<command> - God modes yourself
+           Example: /<command> naxum - God modes Naxum
+           Example: /<command> ? naxum - Shows if Naxum is a god
+           
+  stealth:
+    description: Turns you invisible.
+    usage: |
+           /<command>
+           
+  super:
+    description: Makes you super, you ignore area rules.
+    usage: |
+           /<command>
+           
+  npc:
+    description: Moderates and creates NPCs.
+    usage: |
+           /<command> <create/spawn/add> [username] [unique id] 
+           /<command> <delete/del> <id>
+           /<command> <identify/id>
+           /<command> <id> <move>
+           /<command> <id> <setitem> <IdNum/TextId>
+  
+  spawn:
+    description: Spawns a creature.
+    usage: |
+           /<command> <creature> [amount < 16]
+         
+    
+  give:
+    description: Gives a player some items.
+    usage: |
+           /<command> <item[:data]> [target]
+           Example: /<command> wood:1 - Gives you some Redwood!
+
+  time:
+    description: Sets the time of day.
+    usage: |
+           /<command> <day/night>
+
+  area:
+    description: Moderates areas.
+    usage: |
+           /<command> <create>
+           /<command> <area>
+           
+  areas:
+    description: Lists all old-format areas you own.
+    usage: |
+           /<command>
+
+  group:
+    description: Moderates Area Groups.
+    usage: |
+           /<command> <create> <name> <player/clan>
+           /<command> <name> <add/remove> <area>
+           /<command> <name> <rename> <new name>
+           /<command> <name> <owner> <player/clan name>
+           /<command> <name> <flag> <flag name>
+           /<command> <list> [group name]
+           /<command> <list> <ownedby> <player>
+
+  tp:
+    description: Teleports a player or all players somewhere else.
+    usage: |
+           /<command> <target> 
+           Example: /tp naxum - Teleports you to Naxum
+           Example: /tp deltakin naxum - Tp Deltakin to Naxum
+           Example: /tp * naxum - tps everyone online to Naxum
+           Example: /tp 5 72 10 - Tps you to coords 5, 72, 10
+           Example: /tp naxum 5 72 10 - Tps Naxum to coords
+  'yes':
+    description: Gives a player permission to teleport to you.
+    usage: |
+           /<command>
+  
+  'no':
+    description: Refuses a player from teleporting to you.
+    usage: |
+           /<command>
+  
+  tphere:
+    description: Teleports players to you.
+    usage: |
+           /<command> <player> [player2...]
+           Example: /tphere naxum - Teleports Naxum to you
+           Example: /tphere naxum deltakin - Tps both to you
+
+  tpthere:
+    description: Teleports players to target block.
+    usage: |
+           /<command> <player> [player2...]
+   
+  who:
+    description: Shows online players.
+    usage: |
+           /<command>
+
+  motd:
+    description: Sets the Message Of The Day.
+    usage: |
+           /<command> <message>
+
+  modkit:
+    description: Gives the moderator kit.
+    usage: |
+           /<command>
+
+  drop:
+    description: Toggles removal of players inv. on death.
+    usage: |
+           /<command> [player] [player2...]
+           Example: /drop - Toggles your drops on death
+           Example: /drop naxum - Toggles Naxum's drops on death
+
+  fire:
+    description: Stops the spread of fire.
+    usage: |
+           /<command>
+
+  freeze:
+    description: Freezes a player in place. Currently broken.
+    usage: |
+           /<command> <player> [player2...]
+
+  color:
+    description: Shows all colors and changes player's name color.
+    usage: |
+           /<command> <color>
+
+  clan:
+    description: Commands for controling clans and clan membership.
+    usage: |
+           /<command> help - Shows all clan help info
+
+  g:
+    description: Sends chat in the global channel.
+    usage: |
+           /<command> [message]
+           Example /g - Sets chat channel to global
+           Example /g Hi - Says "Hi" in the global channel
+
+  l:
+    description: Sends chat in the local channel.
+    usage: |
+           /<command> [message]
+           Example /l - Sets chat channel to local
+           Example /l Hi - Says "Hi" in the local channel
+
+  c:
+    description: Sends chat in the clan channel.
+    usage: |
+           /<command> [message]
+           Example /c - Sets chat channel to clan
+           Example /c Hi - Says "Hi" in the clan channel
+
+  m:
+    description: Sends a chat message to everyone in all worlds.
+    usage: |
+           /<command> [message]
+           
+  n:
+    description: Sends chat to NPCs and extremley close players.
+    usage: |
+            /<command> [message]
+            
+  npcs:
+    description: Lists all nearby NPCs.
+    usage: |
+           /<command>
+           
+  msg:
+    description: Sends private message to a player
+    usage: |
+           /<command> <player> [message]
+           Example /msg Delta Hi - Sends "Hi" to Delta
+
+  r:
+    description: Reply to last person you sent a message to
+    usage: |
+           /<command> [message]
+
+  list:
+    description: Retrieve a list of local players.
+    usage: |
+           /<command> 
+           Example /list - Returns all players within shouting distance
+           /<command> help - Shows all clan help info.
+           
+  kill:
+    description: Kills the specified player.
+    usage: |
+           /<command> [player]
+
+  promote:
+    description: Promotes player to next rank
+    usage: |
+           /<command> [player]
+
+  demote:
+    description: Demotes player to previous rank
+    usage: |
+           /<command> [player]
+ 
+  bless:
+    description: Grant or remove player permission
+    usage: |
+           /<command> [add/remove] [player] [permission]
+           Example /bless add Deltakin give - Gives Deltakin permission for "/give" command
+           Example /bless remove Deltakin give - Prohibits Deltakin from using "/give" command
+
+  grant:
+    description: Grant or remove group permission
+    usage: |
+           /<command> [add/remove] [group] [permission]
+           Example /grant add Admin give - Gives Admin permission for "/give" command
+           Example /grant remove Admin give - Prohibits Admins from using "/give" command
+
+  savepermissions:
+    description: Save permissions
+    usage: |
+           /<command> 
