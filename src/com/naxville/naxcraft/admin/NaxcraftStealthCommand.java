@@ -3,11 +3,11 @@ package com.naxville.naxcraft.admin;
 import java.util.ArrayList;
 import java.util.List;
 
-//import net.minecraft.server.Packet20NamedEntitySpawn;
-//import net.minecraft.server.Packet29DestroyEntity;
+import net.minecraft.server.Packet20NamedEntitySpawn;
+import net.minecraft.server.Packet29DestroyEntity;
 
 import org.bukkit.command.CommandSender;
-//import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -24,7 +24,7 @@ public class NaxcraftStealthCommand {
 	}
 	
 	public boolean runCommand(CommandSender sender, String[] args){
-		/*
+		
 		if(!(sender instanceof Player))
 			return true;
 		
@@ -43,36 +43,35 @@ public class NaxcraftStealthCommand {
 				player.sendMessage(Naxcraft.ADMIN_COLOR + "You are now invisible!");
 			}
 		}
-		*/
-		sender.sendMessage(Naxcraft.ERROR_COLOR + "There is an issue with stealthing right now.");
+		
 		return true;
 	}
 	
-	public boolean isInvisible(Player player){/*
+	public boolean isInvisible(Player player){
 		if(this.invisiblePlayers.isEmpty())
 			return false;
 		
 		if(this.invisiblePlayers.contains(player.getName().toLowerCase()))
 			return true;
-		*/
+		
 		return false;
 	}
 	
-	public void addInvisible(Player player){/*
+	public void addInvisible(Player player){
 		if(this.isInvisible(player))
 			return;
 		
 		this.invisiblePlayers.add(player.getName().toLowerCase());
-		*/
+		
 	}
 	
-	public void removeInvisible(Player player){/*
+	public void removeInvisible(Player player){
 		if(this.isInvisible(player))
 			this.invisiblePlayers.remove(player.getName().toLowerCase());
-			*/
+			
 	}
 	
-	public void handleJoin(PlayerJoinEvent event){/*
+	public void handleJoin(PlayerJoinEvent event){
 		if(this.isInvisible(event.getPlayer())){
 			event.getPlayer().sendMessage(Naxcraft.ADMIN_COLOR + "You are invisible!");
 			this.hideFromAll(event.getPlayer());
@@ -85,12 +84,12 @@ public class NaxcraftStealthCommand {
 					hideFrom(player, event.getPlayer());
 				}
 			}
-		}*/
+		}
 	}
 	
-	public void handleTeleport(PlayerTeleportEvent event) {/*
+	public void handleTeleport(PlayerTeleportEvent event) {
 		if(this.isInvisible(event.getPlayer())){
-			//event.getPlayer().sendMessage(Naxcraft.ADMIN_COLOR + "You are invisible!");
+			event.getPlayer().sendMessage(Naxcraft.ADMIN_COLOR + "You are invisible!");
 			this.hideFromAll(event.getPlayer());
 		}
 		
@@ -101,9 +100,9 @@ public class NaxcraftStealthCommand {
 					hideFrom(player, event.getPlayer());
 				}
 			}
-		}*/
+		}
 	}
-	/*
+	
 	protected void hide (Player player){
 		this.addInvisible(player);
 		this.hideFromAll(player);
@@ -133,7 +132,8 @@ public class NaxcraftStealthCommand {
 		CraftPlayer stealthed = (CraftPlayer)p1;
 		CraftPlayer person = (CraftPlayer)p2;
 		
-		person.getHandle().a.b(new Packet29DestroyEntity(stealthed.getEntityId()));
+		//person.getHandle().a.b(new Packet29DestroyEntity(stealthed.getEntityId())); //originally person.getHandle().a.b(new Packet());
+		person.getHandle().netServerHandler.a(new Packet29DestroyEntity(stealthed.getEntityId()));
 	}
 	
 	protected void unhideFrom(Player p1, Player p2){
@@ -142,10 +142,11 @@ public class NaxcraftStealthCommand {
 		CraftPlayer unstealthed = (CraftPlayer)p1;
 		CraftPlayer person = (CraftPlayer)p2;
 		
-		person.getHandle().a.b(new Packet20NamedEntitySpawn(unstealthed.getHandle()));
+		//person.getHandle().a.b(new Packet20NamedEntitySpawn(unstealthed.getHandle()));
+		person.getHandle().netServerHandler.a(new Packet20NamedEntitySpawn(unstealthed.getHandle()));
 	}
-	*/
-	public void updateInvisibles() {/*
+	
+	public void updateInvisibles() {
 		this.spamCount++;
 		
 		if(this.spamCount != 4)return;
@@ -163,6 +164,6 @@ public class NaxcraftStealthCommand {
 					}
 				}
 			}
-		}*/
+		}
 	}
 }

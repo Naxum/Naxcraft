@@ -275,34 +275,34 @@ public class NaxcraftGroupCommand {
 						sender.sendMessage(Naxcraft.ERROR_COLOR + "There is no area group by the name " + Naxcraft.DEFAULT_COLOR + args[0] + Naxcraft.ERROR_COLOR + ".");
 						return true;
 					}
-				}
-			} else if(args[2].equalsIgnoreCase("remove")){
-				if(this.getList(player).containsKey(args[0].toLowerCase())){
-					NaxcraftGroup group = this.getList(player).get(args[0].toLowerCase());
-					
-					if(group.getType().equalsIgnoreCase("player")){
+				} else if(args[2].equalsIgnoreCase("remove")){
+					if(this.getList(player).containsKey(args[0].toLowerCase())){
+						NaxcraftGroup group = this.getList(player).get(args[0].toLowerCase());
 						
-						if(group.removeOwner(args[3])){
-							sender.sendMessage(plugin.getNickName(args[3].toLowerCase()) + Naxcraft.SUCCESS_COLOR + " is no longer an owner of " + Naxcraft.DEFAULT_COLOR + group.getName() + Naxcraft.SUCCESS_COLOR + ".");
-							this.saveGroup(this.getList(player).get(args[0].toLowerCase()));
-							return true;
+						if(group.getType().equalsIgnoreCase("player")){
+							
+							if(group.removeOwner(args[3])){
+								sender.sendMessage(plugin.getNickName(args[3].toLowerCase()) + Naxcraft.SUCCESS_COLOR + " is no longer an owner of " + Naxcraft.DEFAULT_COLOR + group.getName() + Naxcraft.SUCCESS_COLOR + ".");
+								this.saveGroup(this.getList(player).get(args[0].toLowerCase()));
+								return true;
+								
+							} else {
+								sender.sendMessage(plugin.getNickName(args[3].toLowerCase()) + Naxcraft.ERROR_COLOR + " does not have " + Naxcraft.DEFAULT_COLOR + group.getName() + Naxcraft.ERROR_COLOR + " as an owner.");
+								return true;
+							}
+							
 							
 						} else {
-							sender.sendMessage(plugin.getNickName(args[3].toLowerCase()) + Naxcraft.ERROR_COLOR + " does not have " + Naxcraft.DEFAULT_COLOR + group.getName() + Naxcraft.ERROR_COLOR + " as an owner.");
+							sender.sendMessage(Naxcraft.ERROR_COLOR + "This group is not owned by a player, therefore you cannot remove any owners.");
 							return true;
 						}
 						
-						
 					} else {
-						sender.sendMessage(Naxcraft.ERROR_COLOR + "This group is not owned by a player, therefore you cannot remove any owners.");
+						sender.sendMessage(Naxcraft.ERROR_COLOR + "There is no area group by the name " + Naxcraft.DEFAULT_COLOR + args[0] + Naxcraft.ERROR_COLOR + ".");
 						return true;
 					}
-					
-				} else {
-					sender.sendMessage(Naxcraft.ERROR_COLOR + "There is no area group by the name " + Naxcraft.DEFAULT_COLOR + args[0] + Naxcraft.ERROR_COLOR + ".");
-					return true;
 				}
-			}
+			} 
 		}
 		
 		if(args[1].equalsIgnoreCase("type")){

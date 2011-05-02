@@ -1,5 +1,5 @@
 package com.naxville.naxcraft.rpg.listeners;
-
+/*
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -7,15 +7,12 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.entity.EntityTargetEvent;
 
-import redecouverte.npcspawner.NpcEntityTargetEvent;
-import redecouverte.npcspawner.NpcEntityTargetEvent.NpcTargetReason;
-
 import com.naxville.naxcraft.Naxcraft;
 import com.naxville.naxcraft.npcs.NaxcraftNpc;
 import com.naxville.naxcraft.npcs.NaxcraftNpc.NpcInput;
-
-public class NaxNpcListener extends EntityListener {
-	
+*/
+public class NaxNpcListener { //extends EntityListener {
+	/*
 	public static Naxcraft plugin;
 	
 	public NaxNpcListener(Naxcraft instance) {
@@ -72,4 +69,5 @@ public class NaxNpcListener extends EntityListener {
 	        }
     	}
 	}
+	*/
 }

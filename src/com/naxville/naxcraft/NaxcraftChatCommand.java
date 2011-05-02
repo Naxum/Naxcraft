@@ -1,7 +1,6 @@
 package com.naxville.naxcraft;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,16 +12,12 @@ import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.naxville.naxcraft.npcs.NaxcraftNpc;
-import com.naxville.naxcraft.npcs.NaxcraftNpc.NpcInput;
-
 public class NaxcraftChatCommand {
 	
 	private Naxcraft plugin;
 	private Server server;
 	
 	private static final double LOCAL_DISTANCE = 250;
-	private static final double NPC_DISTANCE = 5;
 	private static final String CHAT_SEPERATOR = " ";
 	
 	private Map<Player, ChatChannel> playerChannels = new HashMap<Player, ChatChannel>();
@@ -45,11 +40,6 @@ public class NaxcraftChatCommand {
 		
 		if (commandLabel.equalsIgnoreCase("list")){
 			getList(player);
-			return true;
-		}
-		
-		if(commandLabel.equalsIgnoreCase("npcs")){
-			getNpcs(player);
 			return true;
 		}
 		
@@ -157,19 +147,6 @@ public class NaxcraftChatCommand {
 		}
 	}
 	
-	private void getNpcs(Player player){
-		List<NaxcraftNpc> npcs = plugin.npcCommand.npcs.getNpcsWithinDistance(player, NPC_DISTANCE);
-		String total = "";
-		int totalCount = 0;
-		for(NaxcraftNpc npc : npcs){
-			if(totalCount != 0) total += Naxcraft.MSG_COLOR + ", ";
-			total += Naxcraft.DEFAULT_COLOR + npc.getName() + Naxcraft.MSG_COLOR + " (" + npc.getUniqueId() + ")";
-			totalCount++;
-		}
-		player.sendMessage(Naxcraft.MSG_COLOR + "Nearby NPCs (" + Naxcraft.DEFAULT_COLOR + totalCount + Naxcraft.MSG_COLOR + "): " + total);
-		return;
-	}
-	
 	private void sendMessage(Player player, ChatChannel channel, String message){
 		if (channel == null) channel = playerChannels.get(player);
 		if (channel == null) channel = ChatChannel.GENERAL;
@@ -237,23 +214,6 @@ public class NaxcraftChatCommand {
 			}
 			plugin.log.info("C: " + player.getName() + ": " + message);
 			return;
-		case NPC:
-			List<NaxcraftNpc> npcs = plugin.npcCommand.npcs.getNpcsWithinDistance(player, NPC_DISTANCE);
-			
-			if(npcs.size() < 1){
-				player.sendMessage(Naxcraft.MSG_COLOR + "There are no nearby NPCs. You must be within 10 blocks of an NPC to interact.");
-				return;
-			}
-			
-			String prefix = Naxcraft.MSG_COLOR + "[" + npcs.size() + " NPC] ";
-			
-			player.sendMessage(prefix + Naxcraft.MSG_COLOR + "<" + plugin.getNickName(player.getName()) + Naxcraft.MSG_COLOR + ">" + CHAT_SEPERATOR + message);
-			
-			for(NaxcraftNpc npc : npcs){
-				npc.respond(NpcInput.CHAT, player, message);
-			}
-			plugin.log.info("N: " + player.getName() + ": " + message);
-			break;
 		}
 	}
 	
@@ -381,6 +341,5 @@ enum ChatChannel{
 	GENERAL,
 	LOCAL,
 	CLAN,
-	NPC,
 	MULTI
 }

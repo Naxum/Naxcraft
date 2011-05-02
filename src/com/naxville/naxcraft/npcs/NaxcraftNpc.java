@@ -7,14 +7,11 @@ import org.bukkit.inventory.ItemStack;
 
 import com.naxville.naxcraft.Naxcraft;
 
-import redecouverte.npcspawner.BasicHumanNpc;
-import redecouverte.npcspawner.NpcSpawner;
-
 public class NaxcraftNpc {
 	
 	protected Material hand;
 	protected NpcPersonality personalityName;
-	protected BasicHumanNpc human;
+	//protected BasicHumanNpc human;
 	protected Location location;
 	protected boolean invincible;
 	protected String uniqueId = "";
@@ -27,7 +24,7 @@ public class NaxcraftNpc {
 	
 	//actually creating one
 	public NaxcraftNpc(String uniqueId, String name, Location location) {
-		human = NpcSpawner.SpawnBasicHumanNpc(uniqueId, name, location.getWorld(), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+		//human = NpcSpawner.SpawnBasicHumanNpc(uniqueId, name, location.getWorld(), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
 		
 		this.uniqueId = uniqueId;
 		this.invincible = true;
@@ -44,7 +41,7 @@ public class NaxcraftNpc {
 	public NaxcraftNpc(String uniqueId, String name, Location location, Boolean invincible, NpcPersonality personality, Material handItem, String rightClick, String proximity, String hurt, String chat) {
 		this.uniqueId = uniqueId;
 		
-		human = NpcSpawner.SpawnBasicHumanNpc(uniqueId, name, location.getWorld(), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+		//human = NpcSpawner.SpawnBasicHumanNpc(uniqueId, name, location.getWorld(), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
 		
 		setPersonality(personality);
 		this.invincible = invincible;
@@ -82,7 +79,7 @@ public class NaxcraftNpc {
 		
 		//look!
 		float yaw = player.getLocation().getYaw() % 360 - 180;
-		this.human.moveTo(this.location.getX(), this.location.getY(), this.location.getZ(), yaw, 0); //loc.getPitch()
+		//this.human.moveTo(this.location.getX(), this.location.getY(), this.location.getZ(), yaw, 0); //loc.getPitch()
 		
 		String override = "";
 		if(input == NpcInput.PROXIMITY)
@@ -143,9 +140,9 @@ public class NaxcraftNpc {
 	public void putHand(Material hand) {
 		this.hand = hand;
 		if(hand != null){
-			this.human.getBukkitEntity().setItemInHand(new ItemStack(hand, 1));
+			//this.human.getBukkitEntity().setItemInHand(new ItemStack(hand, 1));
 		} else {
-			this.human.getBukkitEntity().setItemInHand(null);
+			//this.human.getBukkitEntity().setItemInHand(null);
 		}
 	}
 	
@@ -184,13 +181,13 @@ public class NaxcraftNpc {
 	}
 
 	public void say(String message, Player player){
-    	if(message != "") player.sendMessage(Naxcraft.MSG_COLOR + "[NPC] <" + Naxcraft.NPC_COLOR + this.human.getName() + Naxcraft.MSG_COLOR + "> " + Naxcraft.DEFAULT_COLOR + message);
+    	//if(message != "") player.sendMessage(Naxcraft.MSG_COLOR + "[NPC] <" + Naxcraft.NPC_COLOR + this.human.getName() + Naxcraft.MSG_COLOR + "> " + Naxcraft.DEFAULT_COLOR + message);
     }
 	
 	public String getUniqueId(){
 		return this.uniqueId;
 	}
-	
+	/*
 	public BasicHumanNpc getHuman(){
 		return this.human;
 	}
@@ -206,7 +203,7 @@ public class NaxcraftNpc {
 	public void moveTo(Location location){
 		this.location = location;
 		this.human.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-	}
+	}*/
 	
 	public enum NpcInput {
 		PROXIMITY,
@@ -220,7 +217,7 @@ public class NaxcraftNpc {
 	public boolean isInvincible() {
 		return this.invincible;
 	}
-
+/*
 	public String getName() {
 		return this.human.getName();
 	}
@@ -232,5 +229,5 @@ public class NaxcraftNpc {
 	public void reload() {
 		this.human = NpcSpawner.SpawnBasicHumanNpc(this.uniqueId, this.getName(), location.getWorld(), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
 		
-	}
+	}*/
 }

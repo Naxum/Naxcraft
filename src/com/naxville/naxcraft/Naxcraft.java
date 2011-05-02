@@ -65,7 +65,7 @@ public class Naxcraft extends JavaPlugin {
 	public final NaxcraftWorldListener worldListener = new NaxcraftWorldListener(this);
 	
 	//naxrpg listeners
-	protected final NaxNpcListener npcListener = new NaxNpcListener(this);
+	//protected final NaxNpcListener npcListener = new NaxNpcListener(this);
 	protected final NaxRpgPlayerListener rpgPlayerListener = new NaxRpgPlayerListener(this);
 	protected final NaxRpgBlockListener rpgBlockListener = new NaxRpgBlockListener(this);
 
@@ -229,8 +229,10 @@ public class Naxcraft extends JavaPlugin {
 		pm.registerEvent(Type.BLOCK_BREAK, this.rpgBlockListener, Event.Priority.Normal, this);
 		pm.registerEvent(Type.BLOCK_DAMAGE, this.rpgBlockListener, Event.Priority.Normal, this);
 		
+		/*
 		pm.registerEvent(Type.ENTITY_DAMAGE, this.npcListener, Event.Priority.Normal, this);
 		pm.registerEvent(Type.ENTITY_TARGET, this.npcListener, Event.Priority.Normal, this);
+		*/
 		
 		PluginDescriptionFile pdfFile = this.getDescription();
 		this.motd = Naxcraft.COMMAND_COLOR + " " + pdfFile.getName() + " plugin version " + pdfFile.getVersion() + " is on!";

@@ -17,14 +17,14 @@ public class NaxcraftWorldListener extends WorldListener {
 	public void onChunkUnload(ChunkUnloadEvent event){
 		
 		for (String id : plugin.npcCommand.npcs.keySet()) {
-			NaxcraftNpc npc = plugin.npcCommand.npcs.get(id);
+			/*NaxcraftNpc npc = plugin.npcCommand.npcs.get(id);
 			if (Math.abs(event.getChunk().getX() - npc.getLocation().getBlock().getChunk().getX()) > 1){
 				continue;
 			}
 			
 			if (Math.abs(event.getChunk().getZ() - npc.getLocation().getBlock().getChunk().getZ()) > 1){
 				continue;
-			}
+			}*/
 			
 			return;
 		}
@@ -32,6 +32,7 @@ public class NaxcraftWorldListener extends WorldListener {
 	
 	public void onChunkLoad(ChunkLoadEvent event){		
 		for (String id : plugin.npcCommand.npcs.keySet()) {
+			/*
 			NaxcraftNpc npc = plugin.npcCommand.npcs.get(id);
 			if (Math.abs(event.getChunk().getX() - npc.getLocation().getBlock().getChunk().getX()) > 1){
 				continue;
@@ -39,7 +40,7 @@ public class NaxcraftWorldListener extends WorldListener {
 			
 			if (Math.abs(event.getChunk().getZ() - npc.getLocation().getBlock().getChunk().getZ()) > 1){
 				continue;
-			}
+			}*/
 		
 			//npc.reload();
 			return;

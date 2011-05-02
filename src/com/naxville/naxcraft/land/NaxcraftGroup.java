@@ -109,6 +109,7 @@ public class NaxcraftGroup {
 		for(String player : split){
 			if(player.equals(owner)){
 				exists = true;
+				continue;
 			}
 			if(!newOwners.equals("")) newOwners += ",";
 			newOwners += player;

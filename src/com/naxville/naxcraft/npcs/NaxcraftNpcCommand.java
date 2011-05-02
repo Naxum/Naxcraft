@@ -1,17 +1,21 @@
 package com.naxville.naxcraft.npcs;
-/*
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
+//import java.util.List;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
-*/
+//import org.bukkit.Material;
+//import org.bukkit.World;
+//import org.bukkit.entity.Player;
+
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.martin.bukkit.npclib.NPCEntity;
+import org.martin.bukkit.npclib.NPCManager;
 
 import com.naxville.naxcraft.Naxcraft;
 import com.naxville.naxcraft.admin.NaxcraftConfiguration;
@@ -30,11 +34,12 @@ public class NaxcraftNpcCommand {
 		plugin = instance;
 		npcs = new NpcList();
 		id_increment = 0;
-		loadNpcFile();
+		//loadNpcFile();
 	}
 	
+	@SuppressWarnings("unused")
 	private void loadNpcFile(){
-		/*
+		
 		File file = new File(plugin.filePath);
 		try {
 			if (!file.exists()){
@@ -52,9 +57,9 @@ public class NaxcraftNpcCommand {
 		
 		config = new NaxcraftConfiguration(file);
 		config.load();
-		*/
+		
 	}
-	/*
+	
 	private void initalizeFile(){
 		
 		File file = new File(plugin.filePath + "Npcs.yml");
@@ -68,9 +73,9 @@ public class NaxcraftNpcCommand {
 			System.out.println("Error NPC file, AAGGGHHH");
 			e.printStackTrace();
 		}
-	}*/
+	}
 	
-	public boolean loadNpcs(){
+	public boolean loadNpcs(){	
 		return false;
 		/*
 		try {
@@ -113,7 +118,7 @@ public class NaxcraftNpcCommand {
 		return true;
 		*/
 	}
-	
+	/*
 	protected void saveNpc(NaxcraftNpc npc){	
 		String prefix = npc.getLocation().getWorld().getName() + "." + npc.getUniqueId() + ".";
 		
@@ -141,12 +146,16 @@ public class NaxcraftNpcCommand {
 		npc.delete();
 		config.save();
 	}
+	*/
+	public Location location;
+	public NPCManager m;
 	
 	public boolean runNpcCommand(CommandSender sender, String[] args){
-		sender.sendMessage(Naxcraft.ERROR_COLOR + "There is an issues with NPCs right now.");
-		return true;
-		/*
+		
 		if(sender instanceof Player){
+			
+			if(location == null)
+				 m = new NPCManager(plugin);
 			
             Player player = (Player) sender;
             Location l = player.getLocation();
@@ -158,6 +167,21 @@ public class NaxcraftNpcCommand {
             
             if(args.length == 0) return false;
             
+            if(m.getNPC("test") == null){
+            	NPCEntity npc = m.spawnNPC(ChatColor.RED + "Naxville_NPC", player.getLocation(), "test");
+            }
+            
+            location = player.getLocation();
+            
+            //m.moveNPC("test", location);
+            m.pathFindNPC("test", location);
+            
+            return true;
+		}
+		
+		return false;
+	}
+            /*
             // create npc-id npc-name
             if (args[0].equalsIgnoreCase("create") || args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("add")) {
             	String name = "Naxville_NPC";
@@ -328,10 +352,10 @@ public class NaxcraftNpcCommand {
 		
 		return false;
 		*/
-	}
-	/*
+	//}
+	
 	public int getDistance (Location loc1, Location loc2){
 		return (int) Math.ceil(Math.sqrt(Math.pow(loc1.getX() - loc2.getX(), 2) + Math.pow(loc1.getY() - loc2.getY(), 2) + Math.pow(loc1.getZ() - loc2.getZ(), 2)));
-	}*/
+	}
 
 }
