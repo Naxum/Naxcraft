@@ -12,7 +12,7 @@ public class NaxcraftClan {
 	
 	private Object members = new ArrayList<String>();
 	
-	private String name;
+	public String name;
 	private String cMOTD = "";
 	private String leader = "";
 	

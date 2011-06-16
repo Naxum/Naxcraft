@@ -1,20 +1,21 @@
 package com.naxville.naxcraft.land;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Wolf;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.inventory.ItemStack;
 
 import com.naxville.naxcraft.Naxcraft;
 import com.naxville.naxcraft.admin.NaxcraftConfiguration;
@@ -23,8 +24,7 @@ public class NaxcraftGroupCommand {
 	Naxcraft plugin;
 	private NaxcraftConfiguration config;
 	
-	private Map<String, NaxcraftGroup>groups;
-	private Map<String, NaxcraftGroup>rpgGroups;
+	public Map<String, NaxcraftGroup>groups;
 	
 	protected String[] allFlags = { "high", "safe", "lock", "sanc", "pvp", "nopvp", "hurt", "creative", "public", "grinder", "jail" };
 	
@@ -32,29 +32,17 @@ public class NaxcraftGroupCommand {
 		plugin = instance;
 		
 		groups = new HashMap<String, NaxcraftGroup>();
-		rpgGroups = new HashMap<String, NaxcraftGroup>();
 		
 		loadGroupFile();
 	}
 	
-	public boolean getFlags(CommandSender sender){
-		sender.sendMessage(Naxcraft.COMMAND_COLOR + "Area Flags" + Naxcraft.SUCCESS_COLOR + " (Buyable, Price) " + Naxcraft.ADMIN_COLOR + "(Admin Only)"+Naxcraft.DEFAULT_COLOR +":"); 
-		sender.sendMessage(Naxcraft.SUCCESS_COLOR + "High, 16g" + Naxcraft.MSG_COLOR + ": Protects from bedrock to sky. ");
-		sender.sendMessage(Naxcraft.SUCCESS_COLOR + "PvP, 32g" + Naxcraft.MSG_COLOR + ": Protects owners from player damage.");
-		sender.sendMessage(Naxcraft.SUCCESS_COLOR + "Safe, 64g" + Naxcraft.MSG_COLOR + ": Protects owners from ALL damage. (buy PvP first)");
-		sender.sendMessage(Naxcraft.SUCCESS_COLOR + "Grinder, 64g" + Naxcraft.MSG_COLOR + ": Allows mobs to be farmed for items.");	
-		sender.sendMessage(Naxcraft.ADMIN_COLOR + "Sanctuary" + Naxcraft.MSG_COLOR + ": Protects everyone from ALL damage.");
-		sender.sendMessage(Naxcraft.ADMIN_COLOR + "NoPvP" + Naxcraft.MSG_COLOR + ": Protects everyone from PvP damage.");
-		sender.sendMessage(Naxcraft.ADMIN_COLOR + "Creative" + Naxcraft.MSG_COLOR + ": Infinite blocks and tool health.");
-		sender.sendMessage(Naxcraft.ADMIN_COLOR + "Public" + Naxcraft.MSG_COLOR + ": Everyone is free to build here.");
-		sender.sendMessage(Naxcraft.ADMIN_COLOR + "Hurt" + Naxcraft.MSG_COLOR + ": Non-owners take damage when attempting to build.");
-		sender.sendMessage(Naxcraft.ADMIN_COLOR + "Lock" + Naxcraft.MSG_COLOR + ": Area locked by an admin.");
-		sender.sendMessage(Naxcraft.ADMIN_COLOR + "Jail" + Naxcraft.MSG_COLOR + ": Cannot /home or /warp your way out!");
-		
-		return true;
+	public Map<String, NaxcraftGroup> getGroups(String world)
+	{
+		return groups;
 	}
 	
 	public boolean runGroupCommand(CommandSender sender, String[] args){
+		/*
 		if(sender instanceof Player && !plugin.control.has((Player)sender, "group")){
 			sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/group"));
 			return true;
@@ -115,9 +103,7 @@ public class NaxcraftGroupCommand {
 				}
 				
 				sender.sendMessage(plugin.getNickName(args[2].toLowerCase()) + Naxcraft.COMMAND_COLOR + " owns " + Naxcraft.DEFAULT_COLOR + total + Naxcraft.COMMAND_COLOR + " groups: " + groupNames + Naxcraft.COMMAND_COLOR + ".");
-			} /*else {
-				sender.sendMessage(Naxcraft.ERROR_COLOR + "Try /group list ownedby <name>.");
-			}*/
+			}
 			
 			return true;
 		}
@@ -387,23 +373,23 @@ public class NaxcraftGroupCommand {
 				return true;
 			}
 		}
-		
+		*/
+		sender.sendMessage(Naxcraft.ERROR_COLOR + "None of that anymore.");
 		return true;
 	}
 	
 	private void loadGroupFile(){
 		File file = new File(plugin.filePath);
-		try {
+		
 		if (!file.exists()){
 			file.mkdir();
 		}
 		file = new File(plugin.filePath + "AreaGroups.yml");
 		if (!file.exists()){
-			file.createNewFile();
-			initalizeFile();
-		}
-		} catch (IOException Ex) {
-			System.out.println("Shit, problem creating new area groups file");
+			//file.createNewFile();
+			//initalizeFile();
+			
+			//no one cares
 			return;
 		}
 		
@@ -411,26 +397,15 @@ public class NaxcraftGroupCommand {
 		config.load();
 	}
 	
-	private void initalizeFile(){
-		File file = new File(plugin.filePath + "AreaGroups.yml");
-		try {
-			for(World world : plugin.getServer().getWorlds()){
-				BufferedWriter output = new BufferedWriter(new FileWriter(file));
-				output.write(world.getName() + ":");
-				output.close();
-			}
-		} catch (Exception Ex) {
-			System.out.println("Error initalizing area groups file.  Groups cant save >:(");
-		}
-	}
-	
 	public boolean loadGroups(){
 		try {
-			if(plugin.getServer().getWorld(plugin.rpgWorld) == null){
-				plugin.getServer().createWorld(plugin.rpgWorld, Environment.NORMAL);
-			}
 			for(World world : plugin.getServer().getWorlds()){
-				List<String>groupList = config.getKeys(world.getName());
+				if(!world.getName().equals(Naxcraft.OLD_NAXVILLE))
+				{
+					continue;
+				}
+				
+				List<String>groupList = config.getKeys(Naxcraft.OLD_NAXVILLE);
 				NaxcraftGroup group;
 				for (String string : groupList){
 				
@@ -456,12 +431,7 @@ public class NaxcraftGroupCommand {
 						this.removeGroup(group);
 						//this.saveGroup(group);
 					} else {
-						if(world.getName().equalsIgnoreCase("world")){
-							this.groups.put(string.toLowerCase(), group);
-							
-						} else {
-							this.rpgGroups.put(string.toLowerCase(), group);
-						}
+						this.groups.put(string.toLowerCase(), group);
 					}
 				}
 			}
@@ -476,15 +446,15 @@ public class NaxcraftGroupCommand {
 	
 	protected void saveGroup(NaxcraftGroup group){
 		String key = group.getName();
-		config.setProperty(group.getWorldName() + "." + key + ".type", group.saveType());
-		config.setProperty(group.getWorldName() + "." + key + ".owner", group.saveOwner());
-		config.setProperty(group.getWorldName() + "." + key + ".areas", group.saveAreas());
+		config.setProperty(Naxcraft.OLD_NAXVILLE + "." + key + ".type", group.saveType());
+		config.setProperty(Naxcraft.OLD_NAXVILLE + "." + key + ".owner", group.saveOwner());
+		config.setProperty(Naxcraft.OLD_NAXVILLE + "." + key + ".areas", group.saveAreas());
 		//config.setProperty("groups." + key + ".flags", group.saveFlags());
 		
 		HashMap<String, String>flags = group.saveFlags();
 		
 		for(String flag : flags.keySet()){
-			config.setProperty(group.getWorldName() + "." + key + ".flags."+flag, flags.get(flag));
+			config.setProperty(Naxcraft.OLD_NAXVILLE + "." + key + ".flags."+flag, flags.get(flag));
 		}
 		
 		//System.out.println("Group saving: " + group.getWorldName() + "." + group.getName());
@@ -494,13 +464,18 @@ public class NaxcraftGroupCommand {
 	}
 	
 	protected void removeGroup(NaxcraftGroup group){
-		config.removeProperty(group.getWorldName() + "." + group.getName());
+		config.removeProperty(Naxcraft.OLD_NAXVILLE + "." + group.getName());
 		config.save();
 	}
 	
-	public String requestGroup(World world, Location location){
-		for(String name : this.getList(world).keySet()){
-			NaxcraftGroup group = this.getList(world).get(name);
+	public String requestGroup(World world, Location location){		
+		if(!world.getName().equalsIgnoreCase(Naxcraft.OLD_NAXVILLE))
+		{
+			return "";
+		}
+		
+		for(String name : groups.keySet()){
+			NaxcraftGroup group = groups.get(name);
 			if(group.withinGroup(world, location)){
 				return group.getName();
 			}
@@ -513,20 +488,7 @@ public class NaxcraftGroupCommand {
 		return this.requestGroup(player.getWorld(), location);
 	}
 	public Map<String, NaxcraftGroup> getList(Player player){
-		if(player.getWorld().getName().equalsIgnoreCase("world")){
-			return this.groups;
-			
-		} else {
-			return this.rpgGroups;
-		}
-	}
-	public Map<String, NaxcraftGroup> getList(World world) {
-		if(world.getName().equalsIgnoreCase("world")){
-			return this.groups;
-			
-		} else {
-			return this.rpgGroups;
-		}
+			return this.groups;			
 	}
 
 	public String groupInfo(NaxcraftGroup group){		
@@ -592,5 +554,165 @@ public class NaxcraftGroupCommand {
 		}
 		
 		return blocks;
+	}
+	
+	public void getGroupInfo(Player player)
+	{
+		String groupName = plugin.groupCommand.requestGroup(player.getWorld(), player.getLocation());
+		if(groupName != "")
+		{
+			NaxcraftGroup group = plugin.groupCommand.getList(player).get(groupName); 
+			
+			List<String> extras = new ArrayList<String>();
+			
+			String safety = "";
+			String owner = "";
+			String message = ""; 
+			if(group.isFlag("pvp")) safety = "%s are protected from " + Naxcraft.ERROR_COLOR + "PvP damage" + Naxcraft.MSG_COLOR + " here.";
+			if(group.isSafe()) safety = "%s are protected from " + Naxcraft.ERROR_COLOR + "all damage" + Naxcraft.MSG_COLOR + " here.";
+			
+			if(group.isFlag("nopvp"))
+			{
+				if(safety != "") safety += " ";
+				safety += "Everyone is protected from " + Naxcraft.ERROR_COLOR + "PvP damage" + Naxcraft.MSG_COLOR + " here.";
+			}
+			if(group.isSanc()) 
+				safety = "This is a " + Naxcraft.ADMIN_COLOR + "sanctuary" + Naxcraft.MSG_COLOR + ", no one may be harmed here.";
+			
+			if(group.isFlag("jail")) 
+				extras.add("This is a jail, you may not warp out of here.");
+			
+			if(group.isFlag("public"))
+			{
+				owner = "";
+				message = Naxcraft.MSG_COLOR + "You are now in a " + Naxcraft.SUCCESS_COLOR + "public" + Naxcraft.MSG_COLOR + " area.";
+				
+				if(group.isFlag("creative")) 
+				{
+					extras.add("This is a " + Naxcraft.ADMIN_COLOR + "creative" + Naxcraft.MSG_COLOR + " area for everyone!");
+					player.getInventory().addItem(new ItemStack(Material.SPONGE, 1));
+				}
+				
+				if(group.isLock())
+				{
+					extras.add("This area is " + Naxcraft.ADMIN_COLOR + "locked" + Naxcraft.MSG_COLOR + " and can only be unlocked by an admin."); 
+				}
+
+			} 
+			else 
+			{
+				if(!group.isOwner(player.getName()))
+				{
+					message = Naxcraft.MSG_COLOR + "This area is owned by " + Naxcraft.DEFAULT_COLOR + group.getOwner() + Naxcraft.MSG_COLOR + ".";
+					owner = "The owners";
+					
+					if(group.isFlag("creative")) 
+					{
+						extras.add("This is a " + Naxcraft.ADMIN_COLOR + "creative" + Naxcraft.MSG_COLOR + " area, the owner has infinite blocks.");
+						
+						if(plugin.superCommand.superPlayers.containsKey(player.getName().toLowerCase())) 
+						{
+							player.getInventory().addItem(new ItemStack(Material.SPONGE, 1));
+						}
+					}
+					
+				} 
+				else 
+				{
+					message = Naxcraft.MSG_COLOR + "You own this area.";
+					owner = "You";
+					
+					if(group.isFlag("creative")) 
+					{
+						extras.add("You get infinite stuff, this is a " + Naxcraft.ADMIN_COLOR + "creative" + Naxcraft.MSG_COLOR + " area!");
+						player.getInventory().addItem(new ItemStack(Material.SPONGE, 1));
+					}
+					
+					if(group.isLock())
+					{
+						extras.add("This area is " + Naxcraft.ADMIN_COLOR + "locked" + Naxcraft.MSG_COLOR + " and can only be unlocked by an admin."); 
+					}
+				}
+			}
+			
+			boolean includeOwner = false;
+			
+			if(group.isFlag("pvp")) includeOwner = true;
+			if(group.isFlag("nopvp")) includeOwner = false;
+			if(group.isSafe()) includeOwner = true;
+			if(group.isSanc()) includeOwner = false;
+			
+			if(includeOwner)
+			{
+				safety = String.format(safety, owner);
+			}
+			player.sendMessage(message);
+			
+			String extraMessage = "";
+			
+			if(safety != "") 
+				extraMessage += safety + " ";
+			
+			for(String extra : extras)
+			{
+				extraMessage += extra + " ";
+			}
+			player.sendMessage(Naxcraft.MSG_COLOR + extraMessage);
+			
+		} 
+		else 
+		{
+			player.sendMessage(Naxcraft.MSG_COLOR + "You are in the wilderness." );		
+		}
+	}
+
+	public void handleEntityDamage(EntityDamageEvent event) {
+		if(event.getEntity() instanceof Player) {
+		
+		Player player = (Player)event.getEntity();
+		
+		//are we getting hurt in a safe area?
+		String groupCheck = plugin.groupCommand.requestGroup(player.getWorld(), player.getLocation());
+		if(groupCheck != ""){
+			NaxcraftGroup group = plugin.groupCommand.getList(player).get(groupCheck);
+			
+			if(group.isSanc()){
+				//player.sendMessage(Naxcraft.MSG_COLOR + "You are protected by this sanctuary!");
+				event.setCancelled(true);
+				return;
+			}
+			
+			if(group.isSafe()){
+				if(group.isOwner(player.getName().toLowerCase())){ //only owners are safe!
+					event.setCancelled(true);
+					return;
+				}
+			}
+			
+			if(group.isFlag("pvp")){
+				if(event instanceof EntityDamageByEntityEvent){
+					EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent)event;
+					if(ev.getDamager() instanceof Player || ev.getDamager() instanceof Wolf){
+						if(group.isOwner(player.getName().toLowerCase())){
+							event.setCancelled(true);
+							return;
+						}
+					}
+				}
+			}
+			
+			if(group.isFlag("nopvp")){
+				if(event instanceof EntityDamageByEntityEvent){
+					EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent)event;
+					if(ev.getDamager() instanceof Player || ev.getDamager() instanceof Wolf){
+						event.setCancelled(true);
+						return;
+					}
+				}
+			}
+		}
+		
+	} else return;
+		
 	}
 }

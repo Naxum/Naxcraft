@@ -1,10 +1,11 @@
 package com.naxville.naxcraft.admin;
 
 import net.minecraft.server.EntityHuman;
+import net.minecraft.server.ItemStack;
 import net.minecraft.server.TileEntityChest;
 
 public class TileEntityVirtualChest extends TileEntityChest {
-	TileEntityVirtualChest()
+	public TileEntityVirtualChest()
 	{
 		super();
 	}
@@ -19,5 +20,10 @@ public class TileEntityVirtualChest extends TileEntityChest {
 		 * It would likely be preferable to enforce your business logic outside of this file instead, however.
 		 */
 		return true;
+	}
+	
+	public void addItem(int slot, org.bukkit.inventory.ItemStack stack)
+	{
+		this.setItem(slot, new ItemStack(stack.getTypeId(), stack.getAmount(), stack.getDurability()));
 	}
 }

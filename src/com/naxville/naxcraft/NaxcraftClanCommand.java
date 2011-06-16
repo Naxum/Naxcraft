@@ -13,6 +13,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.naxville.naxcraft.admin.NaxcraftConfiguration;
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
 
 public class NaxcraftClanCommand {
 
@@ -170,10 +171,10 @@ public class NaxcraftClanCommand {
 		if (!isConsole){
 			Player player = (Player)sender;
 			if (!command.contains("")){
-			permission = plugin.control.has(player, "clan." + command);
+			permission = plugin.playerManager.getPlayer(player).rank.getId() >= PlayerRank.MODERATOR.getId();
 			}
 			else {
-				permission = plugin.control.has(player, "clan");
+				permission = plugin.playerManager.getPlayer(player).rank.getId() >= PlayerRank.MODERATOR.getId();
 			}
 			NaxcraftClan clan = getPlayerClan(player);
 			if (clan != null)
@@ -436,11 +437,28 @@ public class NaxcraftClanCommand {
 			return true;
 		}
 		if (clan.isPlayerLeader(player)){
-			clan.setMOTD(plugin.arrayToString(args));
+			clan.setMOTD(arrayToString(args));
 			saveClan(clan);
 			return true;
 		}
 		return true;
+	}
+	
+	private String arrayToString(String[] array){
+		StringBuffer buffer = new StringBuffer();
+		String seperator = " ";
+		int newWords = 0;
+		if(array.length > 0){
+			for(int i = 0; i < array.length; i++){
+				if(!array[i].equals("")){
+					if(newWords != 0) buffer.append(seperator);
+					buffer.append(array[i]);
+					newWords++;
+				}
+			}
+		}
+		
+		return buffer.toString();
 	}
 
 	private boolean getWho(CommandSender sender, String[] args){

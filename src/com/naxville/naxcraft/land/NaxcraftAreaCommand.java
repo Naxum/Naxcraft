@@ -36,31 +36,12 @@ public class NaxcraftAreaCommand {
 			return true;
 		}
 		Player player = (Player)sender;
-		if (!plugin.control.has(player, "area")){
+		if (!plugin.playerManager.getPlayer(player).rank.isAdmin()){
 			player.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/area"));
 			return true;
 		}
 		
 		if(args.length == 0) return false;
-		
-		/*
-		if(args.length == 1 && args[0].equalsIgnoreCase("update")){
-			updateOldAreas();
-			return true;
-		}*/
-		
-		if(args[0].equalsIgnoreCase("list")){
-			if(args.length == 1){
-				getOwnedAreas(player.getName().toLowerCase());
-				
-			} else if (args.length == 2){
-				
-				getOwnedAreas(args[1].toLowerCase());
-				
-			} else return false;
-			
-			return true;
-		}
 		
 		if(args[0].equalsIgnoreCase("calc") || args[0].equalsIgnoreCase("calculate")){
 			if(args.length == 1){
@@ -245,51 +226,6 @@ public class NaxcraftAreaCommand {
 		return last;
 	}
 	
-	public int withinOldSchoolArea(Location location){
-		int area = -1;
-		int x = (int) Math.round(location.getX());
-		int z = (int) Math.round(location.getZ());
-		
-		for(String derp : plugin.areas){
-			String[] split = derp.split(";");
-			
-			if(( Integer.parseInt(split[0]) <= x && x <= Integer.parseInt(split[3]) ) || ( Integer.parseInt(split[3]) <= x && x <= Integer.parseInt(split[0]))){
-				if(( Integer.parseInt(split[2]) <= z && z <= Integer.parseInt(split[5]) ) || ( Integer.parseInt(split[5]) <= z && z <= Integer.parseInt(split[2]))){
-					return plugin.areas.indexOf(derp);
-				}
-			}
-		}
-		
-		return area;
-	}
-	
-	public boolean isOldSchoolOwner(String player, int area){
-		String[] split = plugin.areas.get(area).split(";");
-		String[] people = split[6].split(",");
-		
-		for(String owner : people){
-			if(owner.equalsIgnoreCase(player)){
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	public String getOldSchoolOwners(int area){
-		String owners = "";
-		
-		String[] split = plugin.areas.get(area).split(";");
-		String[] people = split[6].split(",");
-		
-		for(String owner : people){
-			owners += Naxcraft.COMMAND_COLOR + ", ";
-			owners += plugin.getNickName(owner);
-		}
-		
-		return owners;
-	}
-	
 	public int withinArea(Location location){
 		
 		for(int key : areas.keySet()){
@@ -300,6 +236,18 @@ public class NaxcraftAreaCommand {
 			}
 		}
 		return -1;
+	}
+	
+	public NaxcraftArea getArea(int x)
+	{
+		if(areas.containsKey(x))
+		{
+			return areas.get(x);
+		}
+		else
+		{
+			return null;
+		}
 	}
 	
 	public int getArea(Player player){
@@ -330,68 +278,5 @@ public class NaxcraftAreaCommand {
 			return true;
 		}
 		return false;
-	}
-	
-	public void getOwnedAreas(String name){
-		name = name.toLowerCase();
-		String message = "";
-		int num = 0;
-		
-		for(String area : plugin.areas){
-			if(isOldSchoolOwner(name.toLowerCase(), plugin.areas.indexOf(area))){
-				if(message != "") message += Naxcraft.COMMAND_COLOR + ", ";
-				message += Naxcraft.DEFAULT_COLOR + "" + plugin.areas.indexOf(area);
-				num++;
-			}
-		}
-		
-		if(message != ""){
-			plugin.getServer().getPlayer(name).sendMessage(plugin.nickNames.get(name) + Naxcraft.COMMAND_COLOR + " owns " + num + " areas: " + message + Naxcraft.COMMAND_COLOR + ".");
-		} else {
-			plugin.getServer().getPlayer(name).sendMessage(plugin.nickNames.get(name) + Naxcraft.COMMAND_COLOR + " owns no areas.");
-		}
-	}
-	
-	//SUPER OVERWRITES ANY PREXISTING INCREMENTING AREA IDS, REPLACED WITH OLD TEXT FILE'S DATA
-	/*
-	private void updateOldAreas(){
-		int i = 0;
-		for(String unsplit : plugin.areas){
-			
-			if(this.areas.containsKey(i)){
-				this.removeArea(this.areas.get(i));
-				this.areas.remove(i);
-			}
-			
-			String[] split = unsplit.split(";");
-			int x1 = Integer.parseInt(split[0]);
-			int y1 = Integer.parseInt(split[1]);
-			int z1 = Integer.parseInt(split[2]);
-			
-			int x2 = Integer.parseInt(split[3]);
-			int y2 = Integer.parseInt(split[4]);
-			int z2 = Integer.parseInt(split[5]);
-			
-			List<Integer> pos1 = new ArrayList<Integer>();
-				pos1.add(x1);
-				pos1.add(y1);
-				pos1.add(z1);
-				
-			List<Integer> pos2 = new ArrayList<Integer>();
-				pos2.add(x2);
-				pos2.add(y2);
-				pos2.add(z2);
-				
-			NaxcraftArea area = new NaxcraftArea(plugin, i);
-				area.setPos1(pos1);
-				area.setPos2(pos2);
-			
-			this.areas.put(i, area);
-			this.saveArea(area);
-			i++;
-		}
-		
-		plugin.getServer().broadcastMessage(i + "" + Naxcraft.MSG_COLOR + " areas have been converted.");
-	}*/
-	
+	}	
 }

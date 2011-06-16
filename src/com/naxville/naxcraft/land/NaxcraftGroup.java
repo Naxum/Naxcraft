@@ -40,7 +40,7 @@ public class NaxcraftGroup {
 		return this.owner;
 	}
 	
-	protected List<Integer> getAreas(){
+	public List<Integer> getAreas(){
 		return this.areas;
 	}
 	

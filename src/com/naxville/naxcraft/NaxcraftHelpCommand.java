@@ -3,6 +3,9 @@ package com.naxville.naxcraft;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.*;
 import org.bukkit.command.*;
+
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
+
 import java.lang.Integer;
 import java.util.List;
 import java.util.ArrayList;
@@ -26,9 +29,12 @@ public class NaxcraftHelpCommand {
 		if(this.init == 0){
 			PluginManager manager = plugin.getServer().getPluginManager();
 			
+			/*
 			for(int i=0; i<manager.getPlugins().length; i++){
 				commands.addAll(PluginCommandYamlParser.parse(manager.getPlugins()[i]));
-			}
+			}*/
+			
+			commands.addAll(PluginCommandYamlParser.parse(manager.getPlugin("Naxcraft")));
 			this.init = 1;
 		}
 		
@@ -38,7 +44,28 @@ public class NaxcraftHelpCommand {
 		while(iter.hasNext())
 		{
 			curr = iter.next();
-			if((plugin.control.has((Player) sender, curr.getName().toLowerCase())&&(sender instanceof Player))||!(sender instanceof Player)){
+			
+			if(curr.getName().equalsIgnoreCase("tp"))
+			{
+				if(plugin.playerManager.getPlayer((Player)sender).rank.getId() >= PlayerRank.PATRON.getId())
+				{
+					visibleCommands.add(curr);
+				}
+			}
+			else if (curr.getName().equalsIgnoreCase("drop") || curr.getName().equalsIgnoreCase("freeze") || curr.getName().equalsIgnoreCase("give") || curr.getName().equalsIgnoreCase("god")
+					|| curr.getName().equalsIgnoreCase("kill") || curr.getName().equalsIgnoreCase("modkit") || curr.getName().equalsIgnoreCase("motd") || curr.getName().equalsIgnoreCase("spawnmob")
+					|| curr.getName().equalsIgnoreCase("stealth") || curr.getName().equalsIgnoreCase("strike") || curr.getName().equalsIgnoreCase("super") || curr.getName().equalsIgnoreCase("time")
+					|| curr.getName().equalsIgnoreCase("wg") || curr.getName().equalsIgnoreCase("weather") || curr.getName().equalsIgnoreCase("drop") || curr.getName().equalsIgnoreCase("promote")
+					|| curr.getName().equalsIgnoreCase("demote") || curr.getName().equalsIgnoreCase("tphere") || curr.getName().equalsIgnoreCase("tpthere") || curr.getName().equalsIgnoreCase("demote")
+					|| curr.getName().equalsIgnoreCase("transcend") || curr.getName().equalsIgnoreCase("demote"))
+			{
+				if(plugin.playerManager.getPlayer((Player)sender).rank.isAdmin())
+				{
+					visibleCommands.add(curr);
+				}
+			}
+			else
+			{
 				visibleCommands.add(curr);
 			}
 		}

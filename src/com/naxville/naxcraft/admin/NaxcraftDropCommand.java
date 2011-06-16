@@ -20,7 +20,7 @@ public class NaxcraftDropCommand {
 		}
 		Player player = (Player)sender;
 		
-		if (!plugin.control.has(player, "drop")){
+		if (!plugin.playerManager.getPlayer(player).rank.isAdmin()){
 			sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/drop"));
 			return true;
 		}

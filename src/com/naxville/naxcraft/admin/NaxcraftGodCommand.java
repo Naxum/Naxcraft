@@ -22,7 +22,7 @@ public class NaxcraftGodCommand {
 	
 	public boolean runGodCommand(CommandSender sender, String[] args){		
 		//is the player an Op? To be changed later.
-		if(sender instanceof Player && plugin.control.has((Player)sender, "god")) {
+		if(sender instanceof Player && plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()) {
 			
 			//if there are no arguments (/god)
 			if(args.length == 0){

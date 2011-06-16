@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.naxville.naxcraft.Naxcraft;
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
 
 public class NaxcraftGiveCommand {
 	private static Naxcraft plugin;
@@ -29,7 +30,7 @@ public class NaxcraftGiveCommand {
         if ((args.length > 3) || (args.length == 0)) {
             return false;
         }
-        if ((sender instanceof Player) && !plugin.control.has((Player)sender, "give")) {
+        if ((sender instanceof Player) && plugin.playerManager.getPlayer((Player)sender).rank != PlayerRank.ADMIN) {
             sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/give"));
             return true;
         }

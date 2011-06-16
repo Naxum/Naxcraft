@@ -6,14 +6,12 @@ import java.util.Map;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.InventoryLargeChest;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
-//import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerAnimationEvent;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.naxville.naxcraft.Naxcraft;
@@ -30,6 +28,8 @@ public class NaxcraftSuperCommand {
 	private TileEntityVirtualChest chest;
 	private TileEntityVirtualChest chest2;
 	private InventoryLargeChest lc;
+	
+	public World testWorld;
 	
 	public NaxcraftSuperCommand (Naxcraft instance){
 		plugin = instance;
@@ -65,7 +65,7 @@ public class NaxcraftSuperCommand {
 	
 	public boolean runSuperCommand(CommandSender sender, String[] args){
 		if(sender instanceof Player){
-			if(!plugin.control.has((Player)sender, "/super")){
+			if(!plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()){
 				sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/super"));
 				return true;
 			}
@@ -239,55 +239,35 @@ public class NaxcraftSuperCommand {
 		}
 	}
 
-	public boolean transcend(CommandSender sender, String[] args) {
-		if(!plugin.control.has((Player)sender, "/super")){
+	public boolean transcend(CommandSender sender, String[] args) 
+	{
+		if(!plugin.playerManager.getPlayer((Player)sender).rank.isAdmin())
+		{
 			sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/super"));
 			return true;
 		}
 		
-		if(args.length == 0) {
-			if(sender instanceof Player){
-				Player player = (Player)sender;
-				System.out.println("Transcending player in " + player.getWorld().getName());
-				if(player.getWorld().getName().equalsIgnoreCase("world")){
-					World world = plugin.getServer().createWorld(plugin.rpgWorld, World.Environment.NORMAL);
-					
-					player.teleport(new Location(world, world.getSpawnLocation().getX(), world.getSpawnLocation().getY(), world.getSpawnLocation().getZ()));
-					
-				} else {
-				
-					World world = plugin.getServer().getWorld("world");
-					player.teleport(new Location(world, world.getSpawnLocation().getX(), world.getSpawnLocation().getY(), world.getSpawnLocation().getZ()));
-				}
-				return true;
-				
-			} else { sender.sendMessage("Get the hell out of here."); return true; }
+		Player player = (Player)sender;
+		
+		if(args.length == 1)
+		{
+			World world = plugin.getServer().getWorld(args[0]);
 			
-		} else {
-			String success = "";
-			String failed = "";
-			for(String name : args){
-				Player player = plugin.getServer().getPlayer(name);
-				if(player != null){
-					if(player.getWorld().getName().equalsIgnoreCase("world")){
-						World world = plugin.getServer().createWorld(plugin.rpgWorld, World.Environment.NORMAL);
-						
-						player.teleport(new Location(world, world.getSpawnLocation().getX(), world.getSpawnLocation().getY(), world.getSpawnLocation().getZ()));
-						
-					} else {
-					
-						World world = plugin.getServer().getWorld("world");
-						player.teleport(new Location(world, world.getSpawnLocation().getX(), world.getSpawnLocation().getY(), world.getSpawnLocation().getZ()));
-					}
-					success += name + " ";
-					
-				} else {
-					failed += name + " ";
-				}
+			if(world == null)
+			{
+				player.sendMessage(Naxcraft.MSG_COLOR + args[0] + " is not a loaded world.");
 			}
-			sender.sendMessage(Naxcraft.MSG_COLOR + "Succeeded: " + success + ", failed: " + failed);
-			return true;
+			else
+			{
+				player.teleport(world.getSpawnLocation());
+			}
 		}
+		else
+		{
+			player.sendMessage(Naxcraft.MSG_COLOR + "Use /transcend <world_name>");
+		}
+		
+		return true;
 	}
 
 	public void handleItemClick(PlayerInteractEvent event) {		
@@ -296,7 +276,8 @@ public class NaxcraftSuperCommand {
 		}*/
 	}
 	
-	public void handleAnimation(PlayerAnimationEvent event){
+	public void handleRightClick(PlayerInteractEvent event){
+		if(event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK)
 		if(event.getPlayer().getItemInHand().getTypeId() != 0){
 			handleItemUse(event.getPlayer(), event.getPlayer().getItemInHand().getType());
 		}

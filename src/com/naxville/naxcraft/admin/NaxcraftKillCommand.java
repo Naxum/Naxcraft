@@ -13,7 +13,7 @@ public class NaxcraftKillCommand {
 	}
 	
 	public boolean runKillCommand(CommandSender sender, String[] args){
-		if((plugin.control.has((Player) sender, "kill")&&(sender instanceof Player))||!(sender instanceof Player)){
+		if(plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()){
 			if(args.length > 0){
 				Player target = plugin.getServer().getPlayer(args[0]);
 				if(target != null){

@@ -1,13 +1,81 @@
 name: Naxcraft
 main: com.naxville.naxcraft.Naxcraft
-version: 1.0
+version: 1.2
 website: http://www.naxville.com/dev.php
-authors: 
-  - Naxum
-  - Deltakin
-  - Gomer3261
+author: Naxum
 
 commands:
+  spawn:
+    description: Teleports you to the world spawnpoint.
+    usage: |
+           /<command>
+  home:
+    description: Teleports you to your home, if not set, the /spawn.
+    usage: |
+           /<command>
+           
+  sethome:
+    description: Sets your /home point, if you own the area.
+    usage: |
+           /<command>
+          
+  who:
+    description: Shows online players.
+    usage: |
+           /<command>
+           
+  help:
+    description: Prints command information.
+    usage: |
+           /<command> [page]
+           /<command> [command name]
+    aliases: '?'
+           
+  property:
+    description: Toggles boundaries of areas you own.
+    usage: |
+           /<command>
+           
+  ranks:
+    description: Lists all ranks and their prefixes.
+    usage: |
+           /<command>
+           
+  flags:
+    description: Lists all area flags and what they do.
+    usage: |
+           /<command>
+           
+  color:
+    description: Shows all colors and changes player's name color.
+    usage: |
+           /<command> <color>
+  join:
+    description: Promotes you to member for 16 iron.
+    usage: |
+           /<command>
+
+           
+  borders:
+    description: Shows current property borders.
+    usage: |
+           /<command>
+           
+  noborders:
+    description: Hides nearby property borders.
+    usage: |
+           /<command>
+           
+  bc:
+    description: Attempts to buy the current chunk. Alias of /property buy chunk
+    usage: |
+           /<command>
+           
+  bf:
+    description: Attempts to buy a flag. Alias of /property buy flag <name>
+    usage: |
+           /<command> <flagname>
+           
   wg:
     description: Creation of warpgates.
     usage: |
@@ -16,6 +84,21 @@ commands:
            /<command> <link> <gate> <dest1> [dest2...]
            /<command> <mulitlink> <gate1> <gate2> [gate3...]
     aliases: warpgate
+
+  mob:
+    description: Sets your mob spawners to a certain creature.
+    usage: |
+           /<command> <creatureType>
+    
+  spawnmob:
+    description: Spawns a mob.
+    usage: |
+           /<command> <creature> [amount < 16]
+    
+  areainfo:
+    description: Use to get info about the Old Naxville area you're in.
+    usage: |
+           /<command>
     
   transcend:
     description: Let's leave this world, baby.
@@ -34,46 +117,6 @@ commands:
            /<command> thunder [player]
            /<command> storm [player]
            /<command> clear [player]
-           
-  help:
-    description: Prints command information.
-    usage: |
-           /<command> [page]
-           /<command> [command name]
-  home:
-    description: Teleports you home.
-    usage: |
-           /<command>
-    
-  ranks:
-    description: Lists all ranks and their prefixes.
-    usage: |
-           /<command>
-           
-  flags:
-    description: Lists all area flags and what they do.
-    usage: |
-           /<command>
-           
-  shrine:
-    description: Going to be replaced by /warp.
-    usage: |
-           /<command> <name>
-
-  warp:
-    description: Allows you to fast-travel to warp gates!
-    usage: |
-           /<command> <name>
-
-  done:
-    description: Removes sponge scaffolding from a creative area.
-    usage: |
-           /<command>
-           
-  wmod:
-    description: Allows for the modification of warps.
-    usage: |
-           /<command> <create/delete/list> <name>
 
   god:
     description: Makes a player invurnerable.
@@ -92,22 +135,7 @@ commands:
     description: Makes you super, you ignore area rules.
     usage: |
            /<command>
-           
-  npc:
-    description: Moderates and creates NPCs.
-    usage: |
-           /<command> <create/spawn/add> [username] [unique id] 
-           /<command> <delete/del> <id>
-           /<command> <identify/id>
-           /<command> <id> <move>
-           /<command> <id> <setitem> <IdNum/TextId>
-  
-  spawn:
-    description: Spawns a creature.
-    usage: |
-           /<command> <creature> [amount < 16]
          
-    
   give:
     description: Gives a player some items.
     usage: |
@@ -118,28 +146,6 @@ commands:
     description: Sets the time of day.
     usage: |
            /<command> <day/night>
-
-  area:
-    description: Moderates areas.
-    usage: |
-           /<command> <create>
-           /<command> <area>
-           
-  areas:
-    description: Lists all old-format areas you own.
-    usage: |
-           /<command>
-
-  group:
-    description: Moderates Area Groups.
-    usage: |
-           /<command> <create> <name> <player/clan>
-           /<command> <name> <add/remove> <area>
-           /<command> <name> <rename> <new name>
-           /<command> <name> <owner> <player/clan name>
-           /<command> <name> <flag> <flag name>
-           /<command> <list> [group name]
-           /<command> <list> <ownedby> <player>
 
   tp:
     description: Teleports a player or all players somewhere else.
@@ -171,11 +177,6 @@ commands:
     description: Teleports players to target block.
     usage: |
            /<command> <player> [player2...]
-   
-  who:
-    description: Shows online players.
-    usage: |
-           /<command>
 
   motd:
     description: Sets the Message Of The Day.
@@ -194,20 +195,10 @@ commands:
            Example: /drop - Toggles your drops on death
            Example: /drop naxum - Toggles Naxum's drops on death
 
-  fire:
-    description: Stops the spread of fire.
-    usage: |
-           /<command>
-
   freeze:
-    description: Freezes a player in place. Currently broken.
+    description: Freezes a player in place.
     usage: |
            /<command> <player> [player2...]
-
-  color:
-    description: Shows all colors and changes player's name color.
-    usage: |
-           /<command> <color>
 
   clan:
     description: Commands for controling clans and clan membership.
@@ -240,21 +231,12 @@ commands:
     usage: |
            /<command> [message]
            
-  n:
-    description: Sends chat to NPCs and extremley close players.
-    usage: |
-            /<command> [message]
-            
-  npcs:
-    description: Lists all nearby NPCs.
-    usage: |
-           /<command>
-           
   msg:
     description: Sends private message to a player
     usage: |
            /<command> <player> [message]
            Example /msg Delta Hi - Sends "Hi" to Delta
+    aliases: tell
 
   r:
     description: Reply to last person you sent a message to
@@ -267,7 +249,8 @@ commands:
            /<command> 
            Example /list - Returns all players within shouting distance
            /<command> help - Shows all clan help info.
-           
+        
+        
   kill:
     description: Kills the specified player.
     usage: |
@@ -282,22 +265,3 @@ commands:
     description: Demotes player to previous rank
     usage: |
            /<command> [player]
- 
-  bless:
-    description: Grant or remove player permission
-    usage: |
-           /<command> [add/remove] [player] [permission]
-           Example /bless add Deltakin give - Gives Deltakin permission for "/give" command
-           Example /bless remove Deltakin give - Prohibits Deltakin from using "/give" command
-
-  grant:
-    description: Grant or remove group permission
-    usage: |
-           /<command> [add/remove] [group] [permission]
-           Example /grant add Admin give - Gives Admin permission for "/give" command
-           Example /grant remove Admin give - Prohibits Admins from using "/give" command
-
-  savepermissions:
-    description: Save permissions
-    usage: |
-           /<command> 

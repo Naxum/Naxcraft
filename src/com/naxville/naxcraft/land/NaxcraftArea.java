@@ -1,5 +1,6 @@
 package com.naxville.naxcraft.land;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -142,7 +143,18 @@ public class NaxcraftArea {
 					blocks.add(plugin.getServer().getWorld("world").getBlockAt(x, y, z));
 				}
 			}
-		}
+		}	
+	}
+	
+	public Point[] getCorners()
+	{
+		Point[] corners = new Point[4];
 		
+		corners[0] = new Point(pos1[0], pos1[1]);
+		corners[1] = new Point(pos1[0] - pos2[0], pos2[1]);
+		corners[2] = new Point(pos1[0], pos1[1] - pos2[1]);
+		corners[3] = new Point(pos2[0], pos2[1]);
+		
+		return corners;
 	}
 }

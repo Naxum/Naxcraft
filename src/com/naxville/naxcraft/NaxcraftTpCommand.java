@@ -7,7 +7,8 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
 
-import com.naxville.naxcraft.land.NaxcraftGroup;
+import com.naxville.naxcraft.autoareas.AutoBase;
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
 
 public class NaxcraftTpCommand {
 	public static Naxcraft plugin;
@@ -24,13 +25,13 @@ public class NaxcraftTpCommand {
 			Player target = plugin.getServer().getPlayer(this.permission.get(player.getName().toLowerCase()));
 			
 			if(maybe.equalsIgnoreCase("yes")){
-				target.sendMessage(plugin.getNickName(player.getName().toLowerCase()) + Naxcraft.SUCCESS_COLOR + " accepted" + Naxcraft.MSG_COLOR + " your request.");
-				player.sendMessage(Naxcraft.MSG_COLOR + "You accepted " + plugin.getNickName(target.getName().toLowerCase()) + Naxcraft.MSG_COLOR + "'s request.");
+				target.sendMessage(plugin.playerManager.getDisplayName(player) + Naxcraft.SUCCESS_COLOR + " accepted" + Naxcraft.MSG_COLOR + " your request.");
+				player.sendMessage(Naxcraft.MSG_COLOR + "You accepted " + plugin.playerManager.getDisplayName(target) + Naxcraft.MSG_COLOR + "'s request.");
 				teleport(target, player);
 				
 			} else {
-				target.sendMessage(plugin.getNickName(player.getName().toLowerCase()) + Naxcraft.ERROR_COLOR + " refused your request.");
-				player.sendMessage(Naxcraft.MSG_COLOR + "You refused " + plugin.getNickName(target.getName().toLowerCase()) + Naxcraft.MSG_COLOR + "'s request.");
+				target.sendMessage(plugin.playerManager.getDisplayName(player) + Naxcraft.ERROR_COLOR + " refused your request.");
+				player.sendMessage(Naxcraft.MSG_COLOR + "You refused " + plugin.playerManager.getDisplayName(target) + Naxcraft.MSG_COLOR + "'s request.");
 			}
 			
 			this.permission.remove(player.getName().toLowerCase());
@@ -49,22 +50,19 @@ public class NaxcraftTpCommand {
 		}
 		
 		Player player = (Player) sender;
-		if(plugin.control.has(player, "tp")){
+		if(plugin.playerManager.getPlayer(player).rank.getId() >= PlayerRank.PATRON.getId()){
         
 	        if (args.length == 0) return false;
 	        
-	        String groupName = plugin.groupCommand.requestGroup(player.getWorld(), player.getLocation());
-			if(groupName != ""){
-				NaxcraftGroup group = plugin.groupCommand.getList(player).get(groupName);
-				if(group.isFlag("jail")){
-					if(!plugin.superCommand.isSuper(player.getName())){
-						player.sendMessage(Naxcraft.MSG_COLOR + "You cannot teleport out of a jail!");
-						return true;
-					}
-				}
-			}
+	       AutoBase base = plugin.autoAreaManager.getBase(player);
+			
+	       if(base != null && base.getFlag("jail") && !plugin.autoAreaManager.isOwner(player, base) && !plugin.superCommand.isSuper(player.getName()))
+	       {
+	    	   player.sendMessage(Naxcraft.MSG_COLOR + "You cannot teleport out of a jail!");
+	    	   return true;
+	       }
 	        
-	        if(plugin.control.getGroup(player).getName().equalsIgnoreCase("patron")){
+	        if(plugin.playerManager.getPlayer(player).rank == PlayerRank.PATRON){
 	        	if(args.length == 1){
 	        		
 	        		Player target = plugin.getServer().getPlayer(args[0]); 
@@ -72,7 +70,7 @@ public class NaxcraftTpCommand {
 	        		if(target != null){
 	        			
 	        			this.permission.put(target.getName().toLowerCase(), player.getName().toLowerCase());
-	        			target.sendMessage(plugin.getNickName(player.getName().toLowerCase()) + Naxcraft.COMMAND_COLOR + " wants to teleport to you. Type " + Naxcraft.DEFAULT_COLOR + "/yes" + Naxcraft.COMMAND_COLOR + " or " + Naxcraft.DEFAULT_COLOR + "/no" + Naxcraft.COMMAND_COLOR + " to give permission.");
+	        			target.sendMessage(plugin.getNickName(player) + Naxcraft.COMMAND_COLOR + " wants to teleport to you. Type " + Naxcraft.DEFAULT_COLOR + "/yes" + Naxcraft.COMMAND_COLOR + " or " + Naxcraft.DEFAULT_COLOR + "/no" + Naxcraft.COMMAND_COLOR + " to give permission.");
 	        			player.sendMessage(Naxcraft.MSG_COLOR + "You are asking " + plugin.getNickName(target.getName().toLowerCase()) + Naxcraft.MSG_COLOR + " for teleportation permission.");
 	        			
 	        			

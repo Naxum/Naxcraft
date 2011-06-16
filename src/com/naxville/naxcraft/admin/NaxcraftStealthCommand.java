@@ -30,7 +30,7 @@ public class NaxcraftStealthCommand {
 		
 		Player player = (Player)sender;
 		
-		if(!plugin.control.has(player, "stealth"))
+		if(!plugin.playerManager.getPlayer(player).rank.isAdmin())
 			return true;
 		
 		if(args.length == 0){
@@ -105,12 +105,12 @@ public class NaxcraftStealthCommand {
 	
 	protected void hide (Player player){
 		this.addInvisible(player);
-		this.hideFromAll(player);
+		//this.hideFromAll(player);
 	}
 	
 	protected void unhide (Player player){
 		this.removeInvisible(player);
-		this.unhideFromAll(player);
+		//this.unhideFromAll(player);
 	}
 	
 	protected void hideFromAll(Player player){

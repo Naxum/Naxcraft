@@ -1,5 +1,6 @@
 package com.naxville.naxcraft;
 
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 /*
@@ -13,20 +14,20 @@ import org.bukkit.entity.Player;
 public class NaxcraftWarpRunnable implements Runnable{
 	private static Naxcraft plugin;
 	private Player player;
-	private String warp;
+	private Location location;
 	
-	public NaxcraftWarpRunnable(Naxcraft instance, Player player, String warp)
+	public NaxcraftWarpRunnable(Naxcraft instance, Player player, Location location)
 	{
 		plugin = instance;
 		this.player = player;
-		this.warp = warp;
+		this.location = location;
 	}
 	
 	public void run()
 	{
-		plugin.warpCommand.warpPlayer(player, warp);
+		plugin.homeCommand.warpPlayer(player, location);
 		plugin.warpingPlayers.remove(player.getName());
-		player.sendMessage(Naxcraft.SUCCESS_COLOR + "You made it in one piece! Oh god! Where is your left hand?!");
+		player.sendMessage(Naxcraft.SUCCESS_COLOR + "You made it!");
 	}
 	
 }

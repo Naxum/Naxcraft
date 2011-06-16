@@ -14,7 +14,7 @@ public class NaxcraftTimeCommand {
 	}
 	
 	public boolean runTimeCommand(CommandSender sender, String[] args){
-		if((plugin.control.has((Player) sender, "time")&&(sender instanceof Player))||!(sender instanceof Player)){
+		if(plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()){
 			if(args.length != 1) return false;
 			
 			if(args.length == 1){
@@ -22,7 +22,7 @@ public class NaxcraftTimeCommand {
 					
 					if(sender instanceof Player){
 						Player player = (Player) sender;
-						plugin.getServer().broadcastMessage(Naxcraft.MSG_COLOR + "SOLAR FLARE!");
+						plugin.announcer.announce(plugin.getNickName(player.getName()) + Naxcraft.MSG_COLOR + " has let there be light!", player.getWorld());
 						player.getWorld().setTime(0);
 					} else {
 						plugin.getServer().broadcastMessage(Naxcraft.MSG_COLOR + "The almighty Super User has let there be light!");
@@ -35,7 +35,7 @@ public class NaxcraftTimeCommand {
 					
 					if(sender instanceof Player){
 						Player player = (Player) sender;
-						plugin.getServer().broadcastMessage(player.getDisplayName() + Naxcraft.MSG_COLOR + " has damned the world with darkness!");
+						plugin.announcer.announce(plugin.getNickName(player.getName()) + Naxcraft.MSG_COLOR + " has damned this world with darkness!", player.getWorld());
 						player.getWorld().setTime(13000);
 					} else {
 						plugin.getServer().broadcastMessage(Naxcraft.MSG_COLOR + "The almighty Super User has damned the world with darkness!");

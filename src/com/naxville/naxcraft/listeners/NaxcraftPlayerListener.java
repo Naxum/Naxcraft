@@ -1,28 +1,27 @@
 package com.naxville.naxcraft.listeners;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.block.CraftDispenser;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.inventory.ItemStack;
 
 import com.naxville.naxcraft.Naxcraft;
 import com.naxville.naxcraft.NaxcraftClan;
 import com.naxville.naxcraft.land.NaxcraftGroup;
+import com.naxville.naxcraft.land.WorldBoundary;
 
 public class NaxcraftPlayerListener extends PlayerListener {
 	
@@ -44,8 +43,10 @@ public class NaxcraftPlayerListener extends PlayerListener {
 
 	@Override
 	public void onPlayerJoin (PlayerJoinEvent event){
-		event.getPlayer().sendMessage(Naxcraft.ADMIN_COLOR + "MOTD:" + plugin.motd);
-		event.setJoinMessage(plugin.getNickName(event.getPlayer().getName()) + Naxcraft.MSG_COLOR + " has joined " + Naxcraft.WORLD_COLOR + plugin.getWorldName(event.getPlayer().getLocation().getWorld()));
+		event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "MOTD:" + plugin.motd);
+		
+		event.setJoinMessage(plugin.playerManager.handlePlayerJoin(event));
+		
 		NaxcraftClan clan = plugin.clanCommand.getPlayerClan(event.getPlayer());
 		if (clan != null){
 			event.getPlayer().sendMessage(clan.getMOTD());
@@ -65,37 +66,52 @@ public class NaxcraftPlayerListener extends PlayerListener {
 		
 	}
 	
+	public void onPlayerKick(PlayerKickEvent event)
+	{
+		String s = event.getReason().charAt(0) + "";
+		String r = event.getReason().substring(1);
+		event.setLeaveMessage(plugin.getNickName(event.getPlayer().getName()) + Naxcraft.MSG_COLOR + " was " + s.toLowerCase() + r + "."); 
+	}
+	
 	@Override
-	public void onPlayerQuit (PlayerQuitEvent event){
+	public void onPlayerQuit (PlayerQuitEvent event)
+	{
 		event.setQuitMessage(plugin.getNickName(event.getPlayer().getName().toLowerCase()) + Naxcraft.MSG_COLOR + " has left the game.");
+		plugin.autoAreaManager.handlePlayerQuit(event);
 	}
 	
-	public void onPlayerRespawn (PlayerRespawnEvent event){
-		Player player = event.getPlayer();
-		if(plugin.deathMessage.containsKey(player)){
-			
-			if(plugin.deathMessage.get(player).equals("dead")){
-				plugin.deathMessage.remove(player);
-			}
-		}
+	public void onPlayerRespawn (PlayerRespawnEvent event)
+	{
+		//TODO: Different spawns
+		
 		event.getPlayer().setDisplayName(plugin.getNickName(event.getPlayer().getName().toLowerCase()));
 	}
 	
 	@Override
-	public void onPlayerTeleport(PlayerTeleportEvent event){
+	public void onPlayerTeleport(PlayerTeleportEvent event)
+	{
 		if(event.isCancelled()) return;
+		plugin.announcer.handlePlayerTeleport(event);
 		
-		//plugin.stealthCommand.handleTeleport(event);
 		event.getPlayer().setDisplayName(plugin.getNickName(event.getPlayer().getName().toLowerCase()));
 	}
 	
-	public void onPlayerMove(PlayerMoveEvent event){
+	public void onPlayerPickupItem(PlayerPickupItemEvent event)
+	{
+		plugin.joinCommand.handleItemPickup(event);
+	}
+	
+	public void onPlayerMove(PlayerMoveEvent event)
+	{
 		if(event.isCancelled()) return;
 		
 		plugin.warpgateCommand.handleMove(event);
-		
-		if(plugin.frozenPlayers.containsKey(event.getPlayer())){
-			if(event.getTo().getX() != event.getFrom().getX() || event.getTo().getY() != event.getFrom().getY() || event.getTo().getZ() != event.getFrom().getZ()){
+		plugin.autoAreaManager.handlePlayerMove(event);
+		WorldBoundary.handlePlayerMove(event);
+		if(plugin.frozenPlayers.containsKey(event.getPlayer()))
+		{
+			if(event.getTo().getX() != event.getFrom().getX() || event.getTo().getY() != event.getFrom().getY() || event.getTo().getZ() != event.getFrom().getZ())
+			{
 				event.getPlayer().teleport(event.getFrom());
 				event.setCancelled(true);
 			}
@@ -103,110 +119,38 @@ public class NaxcraftPlayerListener extends PlayerListener {
 		
 		Player player = event.getPlayer();
 		String groupName = plugin.groupCommand.requestGroup(player.getWorld(), player.getLocation()); 
-		if(groupName != ""){
+		if(groupName != "")
+		{
 			NaxcraftGroup group = plugin.groupCommand.getList(player).get(groupName); 
-			if(this.groupNote.containsKey(player.getName())){
-				if(this.groupNote.get(player.getName()).equalsIgnoreCase(group.getName())){
+			if(this.groupNote.containsKey(player.getName()))
+			{
+				if(this.groupNote.get(player.getName()).equalsIgnoreCase(group.getName()))
+				{
 					return;
 				}
 			}
 			
-			if(player.getInventory().contains(Material.SPONGE)){
-				//player.sendMessage(Naxcraft.MSG_COLOR + "Your sponge has been removed.");
+			if(player.getInventory().contains(Material.SPONGE))
+			{
 				player.getInventory().remove(Material.SPONGE);
 			}
 			
-			List<String> extras = new ArrayList<String>();
+			String message = "You are now in a protected area. Use /areainfo for help.";
 			
-			String safety = "";
-			String owner = "";
-			String message = ""; 
-			if(group.isFlag("pvp")) safety = "%s are protected from " + Naxcraft.ERROR_COLOR + "PvP damage" + Naxcraft.MSG_COLOR + " here.";
-			if(group.isSafe()) safety = "%s are protected from " + Naxcraft.ERROR_COLOR + "all damage" + Naxcraft.MSG_COLOR + " here.";
-			
-			if(group.isFlag("nopvp")){
-				if(safety != "") safety += " ";
-				safety += "Everyone is protected from " + Naxcraft.ERROR_COLOR + "PvP damage" + Naxcraft.MSG_COLOR + " here.";
-			}
-			if(group.isSanc()) safety = "This is a " + Naxcraft.ADMIN_COLOR + "sanctuary" + Naxcraft.MSG_COLOR + ", no one may be harmed here.";
-			
-			if(group.isFlag("jail")) extras.add("This is a jail, you may not warp out of here.");
-			
-			if(group.isFlag("public")){
-				owner = "";
-				message = Naxcraft.MSG_COLOR + "You are now in a " + Naxcraft.SUCCESS_COLOR + "public" + Naxcraft.MSG_COLOR + " area.";
-				
-				if(group.isFlag("creative")) {
-					extras.add("This is a " + Naxcraft.ADMIN_COLOR + "creative" + Naxcraft.MSG_COLOR + " area for everyone!");
-					player.getInventory().addItem(new ItemStack(Material.SPONGE, 1));
-				}
-				
-				if(group.isLock()){
-					extras.add("This area is " + Naxcraft.ADMIN_COLOR + "locked" + Naxcraft.MSG_COLOR + " and can only be unlocked by an admin."); 
-				}
-
-			} else {
-				if(!group.isOwner(player.getName())){
-					message = Naxcraft.MSG_COLOR + "You are now in land owned by " + Naxcraft.DEFAULT_COLOR + group.getOwner() + Naxcraft.MSG_COLOR + ".";
-					owner = "The owners";
-					
-					if(group.isFlag("creative")) {
-						extras.add("This is a " + Naxcraft.ADMIN_COLOR + "creative" + Naxcraft.MSG_COLOR + " area, the owner has infinite blocks.");
-						
-						if(plugin.superCommand.superPlayers.containsKey(player.getName().toLowerCase())) {
-							player.getInventory().addItem(new ItemStack(Material.SPONGE, 1));
-						}
-					}
-					
-				} else {
-					message = Naxcraft.MSG_COLOR + "You are in an area you own.";
-					owner = "You";
-					
-					if(group.isFlag("creative")) {
-						extras.add("You get infinite stuff, this is a " + Naxcraft.ADMIN_COLOR + "creative" + Naxcraft.MSG_COLOR + " area!");
-						player.getInventory().addItem(new ItemStack(Material.SPONGE, 1));
-					}
-					
-					if(group.isLock()){
-						extras.add("This area is " + Naxcraft.ADMIN_COLOR + "locked" + Naxcraft.MSG_COLOR + " and can only be unlocked by an admin."); 
-					}
-				}
+			if(group.isOwner(player.getName()))
+			{
+				message = "You are in an area you own. Use /areainfo for help.";
 			}
 			
-			boolean includeOwner = false;
+			player.sendMessage(Naxcraft.MSG_COLOR + message);
 			
-			if(group.isFlag("pvp")) includeOwner = true;
-			if(group.isFlag("nopvp")) includeOwner = false;
-			if(group.isSafe()) includeOwner = true;
-			if(group.isSanc()) includeOwner = false;
-			
-			if(includeOwner){
-				safety = String.format(safety, owner);
-			}
-			
-			this.groupNote.put(player.getName(), group.getName());
-			player.sendMessage("");
-			player.sendMessage(message);
-			
-			String extraMessage = "";
-			
-			if(safety != "") extraMessage += safety + " ";
-			
-			for(String extra : extras){
-				extraMessage += extra + " ";
-			}
-			player.sendMessage(Naxcraft.MSG_COLOR + extraMessage);
-			
-		} else {
-			if(this.groupNote.containsKey(player.getName())){
-				player.sendMessage("");
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are now in the wilderness." );
-				
-				if(player.getInventory().contains(Material.SPONGE)){
-					//player.sendMessage(Naxcraft.MSG_COLOR + "Your creative sponge scaffolding block has been removed.");
-					player.getInventory().remove(Material.SPONGE);
-				}
-				
+			this.groupNote.put(player.getName(), groupName);
+		} 
+		else 
+		{
+			if(this.groupNote.containsKey(player.getName()))
+			{
+				player.sendMessage(Naxcraft.MSG_COLOR + "You are now in the wilderness." );			
 				this.groupNote.remove(player.getName());
 			}
 		}
@@ -225,7 +169,7 @@ public class NaxcraftPlayerListener extends PlayerListener {
 			return;
 		}
 		
-		if(plugin.control.has(player, "modkit")){
+		if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
 			if(event.getItemDrop().getItemStack().getType() == Material.GOLD_SWORD){
 				event.getItemDrop().remove();
 			}
@@ -245,15 +189,17 @@ public class NaxcraftPlayerListener extends PlayerListener {
 		}
 	}
 	
-	public void onPlayerAnimation(PlayerAnimationEvent event){
-		plugin.superCommand.handleAnimation(event);
-	}
-	
-	public void onPlayerInteract(PlayerInteractEvent event){		
+	public void onPlayerInteract(PlayerInteractEvent event)
+	{		
 		if(event.isCancelled()) return;
-		
-		plugin.autoarea.handleBlockInteract(event);
+
+		plugin.autoAreaManager.handlePlayerInteract(event);
 		plugin.superCommand.handleItemClick(event);
+		plugin.atmManager.handlePlayerInteract(event);
+		plugin.shopManager.handleShopClick(event);
+		plugin.superCommand.handleRightClick(event);
+		
+		if(event.isCancelled()) return;
 		
 		Player player = event.getPlayer();
 		if(event.getAction().equals(Action.RIGHT_CLICK_BLOCK)){
@@ -318,7 +264,7 @@ public class NaxcraftPlayerListener extends PlayerListener {
 				return;
 			}
 			
-			if(plugin.control.has(event.getPlayer(), "modkit")){
+			if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
 				
 				//TODO: MODKIT COMMAND SHOULD HANDLE THIS
 				if(event.getItem().getType() == Material.GOLD_SPADE){
@@ -360,7 +306,7 @@ public class NaxcraftPlayerListener extends PlayerListener {
 				}
 					
 				if(event.getItem().getType() == Material.GOLD_PICKAXE){
-					if(plugin.superCommand.superPlayers.containsKey(event.getPlayer().getName().toLowerCase())){
+					if(plugin.superCommand.isSuper(player.getName())){
 						event.getClickedBlock().setType(Material.AIR);
 						return;
 					}
@@ -375,26 +321,7 @@ public class NaxcraftPlayerListener extends PlayerListener {
 				}
 				
 				if(event.getItem().getType() == Material.GOLD_SWORD){
-					String groupName = plugin.groupCommand.requestGroup(event.getClickedBlock().getWorld(), event.getClickedBlock().getLocation());
-					if(groupName != ""){
-						NaxcraftGroup group = plugin.groupCommand.getList(event.getClickedBlock().getWorld()).get(groupName);
-						event.getPlayer().sendMessage(plugin.groupCommand.groupInfo(group));
-						
-					} else {
-						
-						int area = plugin.areaCommand.withinOldSchoolArea(event.getClickedBlock().getLocation());
-						if(area != -1){
-							String owners = plugin.areaCommand.getOldSchoolOwners(area);
-							event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "Old area: " + Naxcraft.DEFAULT_COLOR + area + Naxcraft.MSG_COLOR + " owned by " + owners);
-						} else {
-							event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You are not within an area. (" + event.getClickedBlock().getLocation().getBlockX() + ", " + event.getClickedBlock().getLocation().getBlockZ() + ")");
-						}
-					
-						area = plugin.areaCommand.withinArea(event.getClickedBlock().getLocation());
-						if(area != -1){
-							event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You are in a new unowned area: " + area);
-						}
-					}
+					//TODO: Rewrite
 				}
 			}
 			
@@ -409,7 +336,7 @@ public class NaxcraftPlayerListener extends PlayerListener {
 				return;
 			}
 			
-			if(plugin.control.has(event.getPlayer(), "modkit")){
+			if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
 				if(event.getItem().getType() == Material.GOLD_SPADE){
 					
 					//if the player has set position1 already

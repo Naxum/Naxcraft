@@ -37,6 +37,8 @@ public class NaxcraftWarpgate {
 	public HashMap<Player, Date> teleportCooldown = new HashMap<Player, Date>();
 	public HashMap<Player, NaxGate> gateWait = new HashMap<Player, NaxGate>();
 	
+	public int portalMaterial = Material.SUGAR_CANE_BLOCK.getId();
+	
 	/**
 	 * TODO:
 	 * 		- Add functionality for Quest requirements or completions.
@@ -164,7 +166,7 @@ public class NaxcraftWarpgate {
 		
 		Player player = (Player)sender;
 		
-		if(!plugin.control.has(player, "wg")){
+		if(!plugin.playerManager.getPlayer(player).rank.isAdmin()){
 			return true;
 		}
 		
@@ -261,20 +263,9 @@ public class NaxcraftWarpgate {
 				}
 			}
 			
-			if(rotated == 0){
-				startBlock.getRelative(0, -1, 0).setTypeIdAndData(Material.PORTAL.getId(), (byte) 0, false);
-				startBlock.getRelative(0, -2, 0).setTypeIdAndData(Material.PORTAL.getId(), (byte) 0, false);
-				
-			} else {
-				//TODO: ROTATE PORTAL BLOCKS CORRECTLY.
-				startBlock.getRelative(0, -1, 0).setTypeIdAndData(Material.PORTAL.getId(), (byte) 0, false);
-				startBlock.getRelative(1, -1, 0).setTypeIdAndData(Material.PORTAL.getId(), (byte) 0, false);
-				startBlock.getRelative(0, -2, 0).setTypeIdAndData(Material.PORTAL.getId(), (byte) 0, false);
-				startBlock.getRelative(1, -2, 0).setTypeIdAndData(Material.PORTAL.getId(), (byte) 0, false);
-				startBlock.getRelative(1, -1, 0).setTypeIdAndData(Material.OBSIDIAN.getId(), (byte) 0, false);
-				startBlock.getRelative(1, -2, 0).setTypeIdAndData(Material.OBSIDIAN.getId(), (byte) 0, false);
-			}
-			
+			startBlock.getRelative(0, -1, 0).setTypeIdAndData(Material.SUGAR_CANE_BLOCK.getId(), (byte) 0, false);
+			startBlock.getRelative(0, -2, 0).setTypeIdAndData(Material.SUGAR_CANE_BLOCK.getId(), (byte) 0, false);
+							
 			portals.add(startBlock.getRelative(0, -1, 0));
 			portals.add(startBlock.getRelative(0, -2, 0));
 			
@@ -328,7 +319,7 @@ public class NaxcraftWarpgate {
 					this.getWarpGate(id).addDestination(id2);
 				}
 			}
-			player.sendMessage(Naxcraft.MSG_COLOR + "Warps are now linked unless there was an error! WOOP.");
+			player.sendMessage(Naxcraft.MSG_COLOR + "Warps should be linked.");
 			
 		} else if (args[0].equalsIgnoreCase("link") || args[0].equalsIgnoreCase("l")){
 			if(args.length != 3) {
@@ -732,8 +723,24 @@ public class NaxcraftWarpgate {
 			this.whiteList = whitelist;
 			this.cost = costs;
 			
+			checkPortalBlocks();
 		}
 
+		private void checkPortalBlocks()
+		{
+			for(Block e : portalBlocks)
+			{
+				if(on && e.getType().getId() != portalMaterial)
+				{
+					e.setTypeIdAndData(portalMaterial, (byte) 0, false);
+				}
+				else if (!on && e.getType().getId() != 0)
+				{
+					e.setType(Material.AIR);
+				}
+			}
+		}
+		
 		private Location getBottomMostPortalBlock() {
 			Block lowestY = null;
 			for(Block portal : this.portalBlocks){
@@ -862,13 +869,13 @@ public class NaxcraftWarpgate {
 					this.on = true;
 					for(Block block : this.portalBlocks){
 						//TODO: SET DIRECTION
-						block.setTypeIdAndData(Material.PORTAL.getId(), (byte) 0, false);
+						block.setTypeIdAndData(portalMaterial, (byte) 0, false);
 					}
 				} else {
 					this.on = true;
 					for(Block block : this.portalBlocks){
 						//TODO: SET DIRECTION
-						block.setTypeIdAndData(Material.PORTAL.getId(), (byte) 0, false);
+						block.setTypeIdAndData(portalMaterial, (byte) 0, false);
 					}
 					this.save();
 				}
@@ -1093,6 +1100,11 @@ public class NaxcraftWarpgate {
 			
 			event.setFrom(getWarpGate(this.destinations.get(dest)).getLandingLocation());
 			//event.setTo(getWarpGate(this.destinations.get(dest)).getLandingLocation());
+			
+			if(getWarpGate(this.destinations.get(dest)).getLandingLocation().getWorld() != event.getPlayer().getWorld())
+			{
+				event.getPlayer().teleport(getWarpGate(this.destinations.get(dest)).getLandingLocation());
+			}
 			
 			event.getPlayer().teleport(getWarpGate(this.destinations.get(dest)).getLandingLocation());
 			

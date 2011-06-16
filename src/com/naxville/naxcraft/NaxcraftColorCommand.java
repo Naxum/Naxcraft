@@ -2,6 +2,9 @@ package com.naxville.naxcraft;
 
 import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
+
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
+
 import java.lang.Integer;
 
 public class NaxcraftColorCommand {
@@ -19,8 +22,10 @@ public class NaxcraftColorCommand {
 		}
 		
 		Player player = (Player)sender;
-		if (!plugin.control.has(player, "color")) {
-			sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/color"));
+		
+		if(plugin.playerManager.getPlayer(player).rank.getId() == 0)
+		{
+			player.sendMessage(Naxcraft.MSG_COLOR + "You must be a member to use this command. Amass 16 iron first and use /join.");
 			return true;
 		}
 		
@@ -33,11 +38,41 @@ public class NaxcraftColorCommand {
 				return false;
 			}
 		
-			if(((color > 0)||((plugin.control.has(player, "admincolor"))&&(color==0)))&&((color<15)||((plugin.control.has(player, "admincolor"))&&(color<16)))) {
-				player.setDisplayName(Naxcraft.COLORS[color] + player.getName() + Naxcraft.DEFAULT_COLOR);
-				plugin.nickNames.put(player.getName().toLowerCase(), Naxcraft.COLORS[color] + player.getName() + Naxcraft.DEFAULT_COLOR);
+			if(
+				(
+					(
+						color > 0
+					)
+					||
+					(
+						(
+								plugin.playerManager.getPlayer(player).rank.getId() > PlayerRank.getRank("moderator").getId()
+						)
+						&&
+						(
+							color==0
+						)
+					)
+				)
+				&&
+				(
+					(
+						color<15
+					)
+					||
+					(
+						(
+								plugin.playerManager.getPlayer(player).rank.getId() > PlayerRank.getRank("moderator").getId()
+						)
+						&&
+						(
+							color<16)
+						)
+					)
+				) {
+				player.setDisplayName(Naxcraft.COLORS[color] + player.getName() + Naxcraft.MSG_COLOR);
+				plugin.playerManager.setDisplayName(player, Naxcraft.COLORS[color]);
 				player.sendMessage((Naxcraft.COMMAND_COLOR + "Your display color is now " + Naxcraft.COLORS[color] + color));
-				plugin.saveNickNames();
 			}
 			else {
 				player.sendMessage((Naxcraft.COMMAND_COLOR + "Invalid color index: " + args[0]));

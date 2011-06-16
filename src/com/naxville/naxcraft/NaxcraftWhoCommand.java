@@ -1,5 +1,6 @@
 package com.naxville.naxcraft;
 
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
 
@@ -10,38 +11,34 @@ public class NaxcraftWhoCommand {
 		plugin = instance;
 	}
 	
-	public boolean runWhoCommand(CommandSender sender, String[] args){
-		if((plugin.control.has((Player) sender, "who")&&(sender instanceof Player))||!(sender instanceof Player)){
-			Player[] players = plugin.getServer().getOnlinePlayers();
+	public boolean runWhoCommand(CommandSender sender, String[] args)
+	{
+		Player[] players = plugin.getServer().getOnlinePlayers();
+		
+		String s = players.length > 1 ? "s" : "";
+		
+		sender.sendMessage(Naxcraft.MSG_COLOR + "----");
+		
+		String online = Naxcraft.COMMAND_COLOR + "/Who Command: " + Naxcraft.DEFAULT_COLOR + players.length + Naxcraft.COMMAND_COLOR + " Player" + s + " online. ";
+		
+		sender.sendMessage(online);
+		
+		for(World world : plugin.getServer().getWorlds())
+		{
+			String message = Naxcraft.MSG_COLOR + " -" + plugin.getWorldName(world, true) + ": ";
+			int i = 0;
 			
-			String s = players.length > 1 ? "s" : "";
-			
-			String message = Naxcraft.MSG_COLOR + "" + players.length + " Player" + s + " online: " + Naxcraft.DEFAULT_COLOR;
-			
-			String naxville = Naxcraft.WORLD_COLOR + "-Naxville: ";
-			String naxvillePlayers = "";
-			String rpg = Naxcraft.WORLD_COLOR + "-" + plugin.rpgWorldName +": ";
-			String rpgPlayers = "";
-			
-			for(Player player : players){
-				if(player.getWorld().getName().equalsIgnoreCase("world")){
-					if(naxvillePlayers != "") naxvillePlayers += Naxcraft.MSG_COLOR + ", ";
-					naxvillePlayers += plugin.getNickName(player.getName().toLowerCase());
-					
-				} else if(player.getWorld().getName().equalsIgnoreCase(plugin.rpgWorld)){
-					if(rpgPlayers != "") rpgPlayers += Naxcraft.MSG_COLOR + ", ";
-					rpgPlayers += plugin.getNickName(player.getName().toLowerCase());
-				}
+			for(Player player : world.getPlayers())	
+			{
+				if(i > 0) message += Naxcraft.MSG_COLOR + ", ";
+				message += plugin.getNickName(player.getName());
+				i++;
 			}
 			
-			rpgPlayers = (rpgPlayers != "") ? rpgPlayers : Naxcraft.MSG_COLOR + "Empty";
-			naxvillePlayers = (naxvillePlayers != "") ? naxvillePlayers : Naxcraft.MSG_COLOR + "Empty";
-			
-			sender.sendMessage(message);
-			sender.sendMessage(naxville + naxvillePlayers);
-			sender.sendMessage(rpg + rpgPlayers);
-		} else {
-			sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/who"));
+			if(i > 0)
+			{
+				sender.sendMessage(message);
+			}
 		}
 		
 		return true;

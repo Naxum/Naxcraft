@@ -1,7 +1,10 @@
 package com.naxville.naxcraft;
 
 import java.lang.Runnable;
+
 import org.bukkit.entity.Player;
+
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
 
 public class NaxcraftRegenRunnable implements Runnable{
 	public static Naxcraft plugin;
@@ -14,27 +17,13 @@ public class NaxcraftRegenRunnable implements Runnable{
 	public void run()
 	{
 		for(Player player : plugin.getServer().getOnlinePlayers())
-		{
-			String rank = plugin.control.getGroup(player.getName().toLowerCase(), true).getName();
-			int x = 1;
-			if(rank != null) {
-				if(rank.equalsIgnoreCase("member")){
-					x = 2;
-					
-				} else if (rank.equalsIgnoreCase("veteran")){
-					x = 3;
-					
-				} else if (rank.equalsIgnoreCase("patron")){
-					x = 4;
-					
-				} else if (rank.equalsIgnoreCase("moderator")){
-					x = 5;
-					
-				} else if (rank.equalsIgnoreCase("admin")){
-					x = 6;
-					
-				} 	
+		{	
+			if(plugin.playerManager.getPlayer(player).rank == PlayerRank.NOOB)
+			{
+				continue;
 			}
+			
+			int x = plugin.playerManager.getPlayer(player).rank.getId() + 1;
 			
 			if(plugin.regenValues.containsKey(player.getName()))
 			{
@@ -45,11 +34,14 @@ public class NaxcraftRegenRunnable implements Runnable{
 					}
 					plugin.regenValues.put(player.getName(), (int)Math.ceil(10 / x));
 					
-				} else {
+				} 
+				else 
+				{
 					plugin.regenValues.put(player.getName(), (plugin.regenValues.get(player.getName()) - 1));
 				}
-			} else {
-				
+			} 
+			else 
+			{
 				plugin.regenValues.put(player.getName(), (int)Math.ceil(10 / x));
 			}
 		}

@@ -20,7 +20,7 @@ public class NaxcraftTphereCommand {
 		}
 		
 		Player player = (Player) sender;
-		if(plugin.control.has(player, "tphere")){
+		if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
 		
 			if(args.length == 0) {
 				return false;
@@ -70,7 +70,7 @@ public class NaxcraftTphereCommand {
 		}
 		
 		Player player = (Player) sender;
-		if(plugin.control.has(player, "tpthere")){
+		if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
 			
 			if(args.length == 0) {
 				return false;

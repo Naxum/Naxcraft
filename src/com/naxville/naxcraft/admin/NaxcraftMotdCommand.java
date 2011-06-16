@@ -19,7 +19,7 @@ public class NaxcraftMotdCommand {
 			return true;
 		}
 		
-		if((plugin.control.has((Player) sender, "motd")&&(sender instanceof Player))||!(sender instanceof Player)){
+		if(plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()){
 			if(args.length < 2) {
 				return false;
 				
