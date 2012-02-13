@@ -358,10 +358,9 @@ public class AutoAreaManager
 				
 				if (event instanceof EntityDamageByEntityEvent)
 				{
-					if (base != null && !base.hasFlag(Flag.CREATIVE))
-					{
-						keepDrops.add(creature.getEntityId());
-					}
+					if (base != null && base.hasFlag(Flag.CREATIVE)) return;
+					
+					keepDrops.add(creature.getEntityId());
 				}
 				else
 				{

@@ -903,6 +903,8 @@ public class PlayerManager
 		{
 			String prefix = "players." + key;
 			
+			if (config.getString(prefix + ".rank") == null) continue;
+			
 			String displayName = config.getString(prefix + ".displayName");
 			PlayerRank rank = PlayerRank.getRank(config.getString(prefix + ".rank"));
 			

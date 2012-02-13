@@ -7,26 +7,23 @@ import java.util.Random;
 
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.entity.CraftCaveSpider;
-import org.bukkit.craftbukkit.entity.CraftCreature;
-import org.bukkit.craftbukkit.entity.CraftEnderman;
-import org.bukkit.craftbukkit.entity.CraftGiant;
-import org.bukkit.craftbukkit.entity.CraftPigZombie;
-import org.bukkit.craftbukkit.entity.CraftSilverfish;
-import org.bukkit.craftbukkit.entity.CraftSkeleton;
-import org.bukkit.craftbukkit.entity.CraftSpider;
-import org.bukkit.craftbukkit.entity.CraftWolf;
-import org.bukkit.craftbukkit.entity.CraftZombie;
+import org.bukkit.entity.CaveSpider;
+import org.bukkit.entity.Creature;
+import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Ghast;
+import org.bukkit.entity.Giant;
+import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Silverfish;
+import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Slime;
+import org.bukkit.entity.Spider;
+import org.bukkit.entity.Wolf;
+import org.bukkit.entity.Zombie;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-
-import com.naxville.naxcraft.autoareas.AutoBase;
 
 public class Announcer
 {
@@ -74,20 +71,6 @@ public class Announcer
 		System.out.println(str);
 	}
 	
-	public void handleEntityDamage(EntityDamageEvent event)
-	{
-		if (!(event.getEntity() instanceof Player)) return;
-		
-		if (event.isCancelled()) return;
-		
-		Player player = (Player) event.getEntity();
-		
-		if (player.getHealth() - event.getDamage() <= 0)
-		{
-			killMessages.put(player, getKiller(event));
-		}
-	}
-	
 	public void handleEntityDeath(EntityDeathEvent event)
 	{
 		if (!(event.getEntity() instanceof Player)) return;
@@ -108,9 +91,11 @@ public class Announcer
 		}
 	}
 	
-	public String getKiller(EntityDamageEvent event)
+	public void announceDeath(Player player)
 	{
-		String cause = "";
+		EntityDamageEvent event = player.getLastDamageCause();
+		
+		String middleText = "", cause = "";
 		
 		if (event instanceof EntityDamageByEntityEvent)
 		{
@@ -131,27 +116,14 @@ public class Announcer
 				cause = plugin.getNickName(((Player) e)) + Naxcraft.MSG_COLOR + " with " + item;
 				
 			}
-			else if (e instanceof Projectile)
-			{
-				AutoBase base = plugin.autoAreaManager.getBase(ev.getDamager().getLocation().getBlock());
-				
-				if (base != null)
-				{
-					cause = "a trap owned by " + base.getFounderName();
-				}
-				else
-				{
-					cause = "in the wild by a dispenser";
-				}
-			}
 			else
 			{
-				if (e instanceof CraftCreature)
+				if (e instanceof Creature)
 				{
 					Random r = new Random();
-					CraftCreature c = (CraftCreature) e;
+					Creature c = (Creature) e;
 					String[] messages;
-					if (c instanceof CraftSkeleton)
+					if (c instanceof Skeleton)
 					{
 						messages = new String[]
 						{
@@ -164,7 +136,7 @@ public class Announcer
 						cause = messages[r.nextInt(messages.length)];
 						
 					}
-					else if (c instanceof CraftGiant)
+					else if (c instanceof Giant)
 					{
 						messages = new String[]
 						{
@@ -176,7 +148,7 @@ public class Announcer
 						};
 						cause = messages[r.nextInt(messages.length)];
 					}
-					else if (c instanceof CraftEnderman)
+					else if (c instanceof Enderman)
 					{
 						messages = new String[]
 						{
@@ -188,7 +160,7 @@ public class Announcer
 						};
 						cause = messages[r.nextInt(messages.length)];
 					}
-					else if (c instanceof CraftSilverfish)
+					else if (c instanceof Silverfish)
 					{
 						messages = new String[]
 						{
@@ -200,7 +172,7 @@ public class Announcer
 						};
 						cause = messages[r.nextInt(messages.length)];
 					}
-					else if (c instanceof CraftCaveSpider)
+					else if (c instanceof CaveSpider)
 					{
 						messages = new String[]
 						{
@@ -212,7 +184,7 @@ public class Announcer
 						};
 						cause = messages[r.nextInt(messages.length)];
 					}
-					else if (c instanceof CraftSpider)
+					else if (c instanceof Spider)
 					{
 						messages = new String[]
 						{
@@ -235,7 +207,7 @@ public class Announcer
 						};
 						cause = messages[r.nextInt(messages.length)];
 					}
-					else if (c instanceof CraftPigZombie)
+					else if (c instanceof PigZombie)
 					{
 						messages = new String[]
 						{
@@ -246,7 +218,7 @@ public class Announcer
 						};
 						cause = messages[r.nextInt(messages.length)];
 					}
-					else if (c instanceof CraftZombie)
+					else if (c instanceof Zombie)
 					{
 						messages = new String[]
 						{
@@ -268,7 +240,7 @@ public class Announcer
 						};
 						cause = messages[r.nextInt(messages.length)];
 					}
-					else if (c instanceof CraftWolf)
+					else if (c instanceof Wolf)
 					{
 						messages = new String[]
 						{
@@ -278,6 +250,10 @@ public class Announcer
 								"so many puppies, so little flesh"
 						};
 						cause = messages[r.nextInt(messages.length)];
+					}
+					else
+					{
+						cause = "something or other";
 					}
 				}
 			}
@@ -426,6 +402,24 @@ public class Announcer
 							"committing suicide?!"
 					};
 					
+				case MAGIC:
+					messages = new String[]
+											{
+							"magic"
+											};
+					
+				case POISON:
+					messages = new String[]
+											{
+							"poison"
+											};
+					
+				case STARVATION:
+					messages = new String[]
+											{
+							"the land of thirst!"
+											};
+					
 				case VOID:
 					cause = "attempting to explore the great unknown";
 					break;
@@ -436,6 +430,9 @@ public class Announcer
 			}
 		}
 		
-		return cause;
+		if (cause.equals("")) cause = "something or other";
+		if (middleText.equals("")) middleText = "was killed by";
+		
+		announce(plugin.getNickName(player) + " " + middleText + " " + cause + "!", player.getWorld());
 	}
 }

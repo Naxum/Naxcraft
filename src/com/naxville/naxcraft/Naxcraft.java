@@ -20,8 +20,6 @@ import org.bukkit.WorldCreator;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
-import org.bukkit.event.Event.Type;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
@@ -51,10 +49,10 @@ import com.naxville.naxcraft.autoareas.AutoAreaManager;
 import com.naxville.naxcraft.autoareas.CityManager;
 import com.naxville.naxcraft.autoareas.PropertyCommand;
 import com.naxville.naxcraft.bloodmoon.BloodMoonManager;
+import com.naxville.naxcraft.listeners.NaxBlockListener;
+import com.naxville.naxcraft.listeners.NaxEntityListener;
 import com.naxville.naxcraft.listeners.NaxInventoryListener;
-import com.naxville.naxcraft.listeners.NaxcraftBlockListener;
-import com.naxville.naxcraft.listeners.NaxcraftEntityListener;
-import com.naxville.naxcraft.listeners.NaxcraftPlayerListener;
+import com.naxville.naxcraft.listeners.NaxPlayerListener;
 import com.naxville.naxcraft.listeners.NaxcraftVehicleListener;
 import com.naxville.naxcraft.mail.MailManager;
 import com.naxville.naxcraft.player.BackCommand;
@@ -72,9 +70,9 @@ import com.naxville.naxcraft.skills.LevelCommand;
 public class Naxcraft extends JavaPlugin
 {
 	// listeners
-	protected final NaxcraftEntityListener entityListener = new NaxcraftEntityListener(this);
-	protected final NaxcraftPlayerListener playerListener = new NaxcraftPlayerListener(this);
-	protected final NaxcraftBlockListener blockListener = new NaxcraftBlockListener(this);
+	protected final NaxEntityListener entityListener = new NaxEntityListener(this);
+	protected final NaxPlayerListener playerListener = new NaxPlayerListener(this);
+	protected final NaxBlockListener blockListener = new NaxBlockListener(this);
 	protected final NaxInventoryListener inventoryListener = new NaxInventoryListener(this);
 	public final NaxcraftVehicleListener vehicleListener = new NaxcraftVehicleListener(this);
 	
@@ -194,56 +192,11 @@ public class Naxcraft extends JavaPlugin
 	{
 		PluginManager pm = getServer().getPluginManager();
 		
-		// entity listeners
-		pm.registerEvent(Type.ENTITY_DAMAGE, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.ENTITY_COMBUST, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.ENTITY_DEATH, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.ENTITY_EXPLODE, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.ENTITY_TARGET, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.FOOD_LEVEL_CHANGE, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.ENDERMAN_PICKUP, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.ENDERMAN_PLACE, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.EXPLOSION_PRIME, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.CREATURE_SPAWN, this.entityListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.ITEM_DESPAWN, this.entityListener, Event.Priority.Normal, this);
-		
-		// block listeners
-		pm.registerEvent(Type.BLOCK_IGNITE, this.blockListener, Event.Priority.Lowest, this);
-		pm.registerEvent(Type.BLOCK_PLACE, this.blockListener, Event.Priority.Low, this);
-		pm.registerEvent(Type.BLOCK_BREAK, this.blockListener, Event.Priority.Lowest, this);
-		pm.registerEvent(Type.BLOCK_DISPENSE, this.blockListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.BLOCK_DAMAGE, this.blockListener, Event.Priority.Lowest, this);
-		pm.registerEvent(Type.BLOCK_PHYSICS, this.blockListener, Event.Priority.Lowest, this);
-		pm.registerEvent(Type.BLOCK_FROMTO, this.blockListener, Event.Priority.Lowest, this);
-		pm.registerEvent(Type.BLOCK_FORM, this.blockListener, Event.Priority.Lowest, this);
-		pm.registerEvent(Type.SIGN_CHANGE, this.blockListener, Event.Priority.Normal, this);
-		
-		// inventory events
-		pm.registerEvent(Type.FURNACE_BURN, this.inventoryListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.FURNACE_SMELT, this.inventoryListener, Event.Priority.Normal, this);
-		
-		// player listeners
-		pm.registerEvent(Type.PLAYER_JOIN, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_QUIT, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_RESPAWN, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_DROP_ITEM, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_TELEPORT, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_MOVE, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_CHAT, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_INTERACT, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_INTERACT_ENTITY, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_PICKUP_ITEM, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_KICK, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_PORTAL, this.playerListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.PLAYER_CHANGED_WORLD, this.playerListener, Event.Priority.Normal, this);
-		
-		// vehicle listeners
-		pm.registerEvent(Type.VEHICLE_DESTROY, this.vehicleListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.VEHICLE_ENTER, this.vehicleListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.VEHICLE_EXIT, this.vehicleListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.VEHICLE_DAMAGE, this.vehicleListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.VEHICLE_UPDATE, this.vehicleListener, Event.Priority.Normal, this);
-		pm.registerEvent(Type.VEHICLE_COLLISION_ENTITY, this.vehicleListener, Event.Priority.Normal, this);
+		pm.registerEvents(blockListener, this);
+		pm.registerEvents(entityListener, this);
+		pm.registerEvents(playerListener, this);
+		pm.registerEvents(vehicleListener, this);
+		pm.registerEvents(inventoryListener, this);
 		
 		PluginDescriptionFile pdfFile = this.getDescription();
 		this.motd = Naxcraft.COMMAND_COLOR + " " + pdfFile.getName() + " plugin version " + pdfFile.getVersion() + " is on!";

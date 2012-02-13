@@ -8,16 +8,18 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Furnace;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.FurnaceSmeltEvent;
-import org.bukkit.event.inventory.InventoryListener;
 import org.bukkit.inventory.ItemStack;
 
 import com.naxville.naxcraft.Naxcraft;
 import com.naxville.naxcraft.autoareas.AutoAreaManager.Flag;
 import com.naxville.naxcraft.autoareas.AutoBase;
 
-public class NaxInventoryListener extends InventoryListener
+public class NaxInventoryListener implements Listener
 {
 	Naxcraft plugin;
 	public List<Location> forges = new ArrayList<Location>();
@@ -33,6 +35,7 @@ public class NaxInventoryListener extends InventoryListener
 		plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new ForgeSmelter(), 100L, 5L);
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFurnaceBurn(FurnaceBurnEvent event)
 	{
 		AutoBase base = plugin.autoAreaManager.getBase(event.getFurnace());
@@ -54,6 +57,7 @@ public class NaxInventoryListener extends InventoryListener
 		}
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFurnaceSmelt(FurnaceSmeltEvent event)
 	{
 		if (forges.contains(event.getFurnace().getLocation())) return;

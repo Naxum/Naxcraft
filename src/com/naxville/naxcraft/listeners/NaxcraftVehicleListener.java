@@ -14,13 +14,15 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vehicle;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
 import org.bukkit.event.vehicle.VehicleExitEvent;
-import org.bukkit.event.vehicle.VehicleListener;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.event.vehicle.VehicleUpdateEvent;
 import org.bukkit.util.Vector;
@@ -31,7 +33,7 @@ import com.naxville.naxcraft.admin.SuperManager;
 import com.naxville.naxcraft.autoareas.AutoAreaManager.Flag;
 import com.naxville.naxcraft.autoareas.AutoBase;
 
-public class NaxcraftVehicleListener extends VehicleListener
+public class NaxcraftVehicleListener implements Listener
 {
 	public Naxcraft plugin;
 	
@@ -53,6 +55,7 @@ public class NaxcraftVehicleListener extends VehicleListener
 		carts.add(Material.STORAGE_MINECART);
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVehicleDamage(VehicleDamageEvent event)
 	{
 		AutoBase base = plugin.autoAreaManager.getBase(event.getVehicle().getLocation());
@@ -71,6 +74,7 @@ public class NaxcraftVehicleListener extends VehicleListener
 		}
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVehicleDestroy(VehicleDestroyEvent event)
 	{
 		AutoBase base = plugin.autoAreaManager.getBase(event.getVehicle().getLocation());
@@ -82,6 +86,7 @@ public class NaxcraftVehicleListener extends VehicleListener
 		}
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVehicleEnter(VehicleEnterEvent event)
 	{
 		System.out.println("Entering.");
@@ -107,6 +112,7 @@ public class NaxcraftVehicleListener extends VehicleListener
 		}
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVehicleExit(VehicleExitEvent event)
 	{
 		System.out.println("Exiting.");
@@ -177,6 +183,7 @@ public class NaxcraftVehicleListener extends VehicleListener
 		}
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVehicleUpdate(VehicleUpdateEvent event)
 	{
 		Vehicle v = event.getVehicle();
@@ -225,6 +232,7 @@ public class NaxcraftVehicleListener extends VehicleListener
 		}
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVehicleMove(VehicleMoveEvent event)
 	{
 		AutoBase from = plugin.autoAreaManager.getBase(event.getFrom());
@@ -260,6 +268,7 @@ public class NaxcraftVehicleListener extends VehicleListener
 		event.setCancelled(true);
 	}
 	
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void handlePlayerDropItem(PlayerDropItemEvent event)
 	{
 		if (event.isCancelled()) return;
