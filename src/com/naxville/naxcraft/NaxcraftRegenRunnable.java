@@ -1,12 +1,8 @@
 package com.naxville.naxcraft;
 
-import java.lang.Runnable;
 
-import org.bukkit.entity.Player;
-
-import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
-
-public class NaxcraftRegenRunnable implements Runnable{
+public class NaxcraftRegenRunnable implements Runnable
+{
 	public static Naxcraft plugin;
 	
 	public NaxcraftRegenRunnable(Naxcraft instance)
@@ -16,36 +12,47 @@ public class NaxcraftRegenRunnable implements Runnable{
 	
 	public void run()
 	{
-		for(Player player : plugin.getServer().getOnlinePlayers())
-		{	
-			if(plugin.playerManager.getPlayer(player).rank == PlayerRank.NOOB)
+		/*
+		for (Player player : plugin.getServer().getOnlinePlayers())
+		{
+			NaxPlayer p = plugin.playerManager.getPlayer(player);
+			
+			if (p == null || p.rank == PlayerRank.getRank(0))
 			{
 				continue;
 			}
 			
-			int x = plugin.playerManager.getPlayer(player).rank.getId() + 1;
+			int x = p.rank.getId() + 1;
 			
-			if(plugin.regenValues.containsKey(player.getName()))
+			if (p.rank == PlayerRank.SUPER_PATRON)
 			{
-				if(plugin.regenValues.get(player.getName()) <= 1)
-				{					
-					if((player.getHealth() < 20) && (player.getHealth() > 0)) {
-						player.setHealth(player.getHealth() + ((int)Math.ceil(1*(x/2))));
+				x = PlayerRank.ADMIN.getId() + 1;
+			}
+			
+			if (plugin.regenValues.containsKey(player.getName()))
+			{
+				if (plugin.regenValues.get(player.getName()) <= 1)
+				{
+					if (!player.getWorld().getName().startsWith("aether"))
+					{
+						if ((player.getHealth() < 20) && (player.getHealth() > 0))
+						{
+							player.setHealth(player.getHealth() + ((int) Math.ceil(1 * (x / 2))));
+						}
+						plugin.regenValues.put(player.getName(), (int) Math.ceil(10 / x));
 					}
-					plugin.regenValues.put(player.getName(), (int)Math.ceil(10 / x));
-					
-				} 
-				else 
+				}
+				else
 				{
 					plugin.regenValues.put(player.getName(), (plugin.regenValues.get(player.getName()) - 1));
 				}
-			} 
-			else 
-			{
-				plugin.regenValues.put(player.getName(), (int)Math.ceil(10 / x));
 			}
-		}
-		
-		//plugin.stealthCommand.updateInvisibles();
+			else
+			{
+				plugin.regenValues.put(player.getName(), (int) Math.ceil(10 / x));
+			}
+		}*/
+
+		plugin.stealthCommand.updateInvisibles();
 	}
 }

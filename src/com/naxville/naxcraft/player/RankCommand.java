@@ -1,5 +1,8 @@
 package com.naxville.naxcraft.player;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.entity.Player;
 
 import com.naxville.naxcraft.Naxcraft;
@@ -8,17 +11,21 @@ import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
 public class RankCommand 
 {
 	public Naxcraft plugin;
+	public List<String> superAdmins = new ArrayList<String>();
 	
 	public RankCommand(Naxcraft plugin)
 	{
 		this.plugin = plugin;
+		
+		superAdmins.add("Naxum");
+		superAdmins.add("RoboSpunk");
 	}
 	
 	public boolean demote(NaxPlayer p, Player demoter)
 	{
 		NaxPlayer admin = plugin.playerManager.getPlayer(demoter);
 		
-		if(admin.rank.getId() < PlayerRank.MODERATOR.getId())
+		if(!admin.rank.isAdmin() && !superAdmins.contains(admin.name))
 		{
 			return false;
 		}
@@ -26,7 +33,7 @@ public class RankCommand
 		{
 			if(p.rank.getId() == PlayerRank.MODERATOR.getId())
 			{
-				if(admin.rank.getId() == PlayerRank.ADMIN.getId())
+				if(admin.rank.getId() >= PlayerRank.ADMIN.getId() || superAdmins.contains(admin.name))
 				{
 					p.rank = PlayerRank.getRank(p.rank.getId() - 1);
 					plugin.playerManager.savePlayer(p);
@@ -39,7 +46,7 @@ public class RankCommand
 			}
 			else if (p.rank.getId() == PlayerRank.ADMIN.getId())
 			{
-				if(admin.rank.getId() == PlayerRank.ADMIN.getId())
+				if(superAdmins.contains(admin.name))
 				{
 					p.rank = PlayerRank.getRank(p.rank.getId() - 1);
 					plugin.playerManager.savePlayer(p);
@@ -52,7 +59,7 @@ public class RankCommand
 			}
 			else
 			{
-				if(p.rank == PlayerRank.NOOB)
+				if(p.rank == PlayerRank.getRank(0))
 				{
 					return false;
 				}
@@ -68,7 +75,7 @@ public class RankCommand
 	{
 		NaxPlayer admin = plugin.playerManager.getPlayer(promoter);
 		
-		if(admin.rank.getId() < PlayerRank.MODERATOR.getId())
+		if(!admin.rank.isAdmin() && !superAdmins.contains(admin.name))
 		{
 			return false;
 		}
@@ -76,7 +83,7 @@ public class RankCommand
 		{
 			if(p.rank.getId() == PlayerRank.MODERATOR.getId())
 			{
-				if(admin.rank.getId() == PlayerRank.ADMIN.getId())
+				if(admin.rank.getId() == PlayerRank.ADMIN.getId() || superAdmins.contains(admin.name))
 				{
 					p.rank = PlayerRank.getRank(p.rank.getId() + 1);
 					plugin.playerManager.savePlayer(p);
@@ -87,7 +94,7 @@ public class RankCommand
 					return false;
 				}
 			}
-			else if (p.rank.getId() == PlayerRank.ADMIN.getId())
+			else if (p.rank.getId() == PlayerRank.values().length-1)
 			{
 				return false;
 			}
@@ -108,7 +115,18 @@ public class RankCommand
 			return true;
 		}
 		
-		NaxPlayer p = plugin.playerManager.getPlayer(args[0]);
+		Player target = plugin.getServer().getPlayer(args[0]);
+		
+		NaxPlayer p = null;
+		
+		if(target == null)
+		{
+			 p = plugin.playerManager.getPlayer(args[0]);
+		}
+		else
+		{
+			p = plugin.playerManager.getPlayer(target);
+		}
 		
 		if(p == null)
 		{

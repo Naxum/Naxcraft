@@ -1,10 +1,10 @@
 package com.naxville.naxcraft;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -12,7 +12,11 @@ import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class NaxcraftChatCommand {
+import com.naxville.naxcraft.admin.NaxcraftWarpgate.NaxGate;
+import com.naxville.naxcraft.player.NaxPlayer;
+
+public class NaxcraftChatCommand
+{
 	
 	private Naxcraft plugin;
 	private Server server;
@@ -23,117 +27,184 @@ public class NaxcraftChatCommand {
 	private Map<Player, ChatChannel> playerChannels = new HashMap<Player, ChatChannel>();
 	private Map<Player, Player> playerWhisper = new HashMap<Player, Player>();
 	
-	public NaxcraftChatCommand(Naxcraft instance){
-		this.plugin = instance;
+	private int debug_players = 0; // supposed to be 2
+	
+	public NaxcraftChatCommand(Naxcraft plugin)
+	{
+		this.plugin = plugin;
+		this.server = plugin.getServer();
 	}
 	
-	public boolean runChatCommand(CommandSender sender, String commandLabel, String[] args){
+	public boolean runChatCommand(CommandSender sender, String commandLabel, String[] args)
+	{
 		
-		if (server == null)
-			server = plugin.getServer(); 
+		if (server == null) server = plugin.getServer();
 		
-		if (!(sender instanceof Player)){
-			sender.sendMessage("Only players can use the clan chat system.  Sorry :(");
-			return true;
-		}
-		Player player = (Player)sender;
+		if (!(sender instanceof Player)) { return true; }
+		Player player = (Player) sender;
 		
-		if (commandLabel.equalsIgnoreCase("list")){
+		if (commandLabel.equalsIgnoreCase("list"))
+		{
 			getList(player);
 			return true;
 		}
 		
-		if (commandLabel.equalsIgnoreCase("msg")){
-			if (args.length < 0){
-				player.sendMessage(Naxcraft.ERROR_COLOR + "No player found");
+		if (commandLabel.equalsIgnoreCase("msg") || commandLabel.equalsIgnoreCase("tell"))
+		{
+			if (args.length < 0)
+			{
+				player.sendMessage(NaxColor.MSG + "No player found");
 				return false;
-			} else { 
+			}
+			else
+			{
 				Player p = server.getPlayer(args[0]);
-				if (p == null){
-					player.sendMessage(Naxcraft.ERROR_COLOR + "Player not found");
+				if (p == null)
+				{
+					player.sendMessage(NaxColor.MSG + "Player not found");
 					return true;
 				}
 				args[0] = "";
-
-				String message = arrayToString(args);
-				player.sendMessage(Naxcraft.MSG_COLOR + "<" + plugin.getNickName(player.getName()) + Naxcraft.MSG_COLOR +" -> " + p.getDisplayName() + Naxcraft.MSG_COLOR + "> " + message);
-				p.sendMessage(Naxcraft.MSG_COLOR + "<" + plugin.getNickName(p.getName()) + Naxcraft.MSG_COLOR + " <- " + plugin.getNickName(player.getName()) + Naxcraft.DEFAULT_COLOR + "> " + message);
+				
+				if (plugin.playerManager.hasMuted(player, p))
+				{
+					player.sendMessage(NaxColor.MSG + "You have muted this person.");
+					return true;
+				}
+				else if (plugin.playerManager.hasMuted(p, player))
+				{
+					player.sendMessage(NaxColor.MSG + "This player has muted you.");
+					return true;
+				}
+				
+				String message = parseMessage(player, NaxUtil.arrayToString(args));
+				player.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(player.getName()) + NaxColor.MSG + " -> " + p.getDisplayName() + NaxColor.MSG + "> " + message);
+				p.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(p.getName()) + NaxColor.MSG + " <- " + plugin.getNickName(player.getName()) + NaxColor.WHITE + "> " + message);
+				plugin.log.info("MSG: " + player.getName() + " -> " + p.getName() + ": " + message);
 				playerWhisper.put(player, p);
 				return true;
 			}
 		}
 		
-		if (commandLabel.equalsIgnoreCase("r")){
+		if (commandLabel.equalsIgnoreCase("r"))
+		{
 			Player p;
-			if (playerWhisper.containsKey(player)){
+			if (playerWhisper.containsKey(player))
+			{
 				p = playerWhisper.get(player);
-			} else {
+			}
+			else
+			{
 				p = server.getPlayer(args[0]);
-				if (p == null){
-					player.sendMessage(Naxcraft.ERROR_COLOR + "No player found");
+				if (p == null)
+				{
+					player.sendMessage(NaxColor.MSG + "No player found");
 					return false;
-				} else {
+				}
+				else
+				{
 					playerWhisper.put(player, p);
 					args[0] = "";
 				}
 			}
-			String message = arrayToString(args);
-			player.sendMessage(Naxcraft.MSG_COLOR + "<" + plugin.getNickName(player.getName()) + Naxcraft.MSG_COLOR +" -> " + p.getDisplayName() + Naxcraft.MSG_COLOR + "> " + message);
-			p.sendMessage(Naxcraft.MSG_COLOR + "<" + plugin.getNickName(p.getName()) + Naxcraft.MSG_COLOR + " <- " + plugin.getNickName(player.getName()) + Naxcraft.DEFAULT_COLOR + "> " + message);
-			plugin.log.info("MSG: " + player.getName() + " -> " + p.getName() + ": " + message);
+			String message = parseMessage(player, NaxUtil.arrayToString(args));
+			player.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(player.getName()) + NaxColor.MSG + " -> " + p.getDisplayName() + NaxColor.MSG + "> " + message);
+			p.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(p.getName()) + NaxColor.MSG + " <- " + plugin.getNickName(player.getName()) + NaxColor.WHITE + "> " + message);
+			if (args.length > 0) plugin.log.info("MSG: " + player.getName() + " -> " + p.getName() + ": " + message);
 			playerWhisper.put(player, p);
 			return true;
 			
 		}
 		
-		if (args.length < 1){
-
-			if (commandLabel.equalsIgnoreCase("g")) {
+		if (args.length < 1)
+		{
+			
+			if (commandLabel.equalsIgnoreCase("g"))
+			{
 				setPlayerChannel(player, ChatChannel.GENERAL);
-				return true;
-			} else if (commandLabel.equalsIgnoreCase("l")) {
-				setPlayerChannel(player, ChatChannel.LOCAL);
-				return true;
-			} else if (commandLabel.equalsIgnoreCase("c")) {
-				setPlayerChannel(player, ChatChannel.CLAN);
-				return true;
-			} else if (commandLabel.equalsIgnoreCase("m")){
-				setPlayerChannel(player, ChatChannel.MULTI);
-				return true;
 			}
-		} else {
-			if (commandLabel.equalsIgnoreCase("g")){
-				sendMessage(player, ChatChannel.GENERAL, arrayToString(args));
-				return true;
-			} else if (commandLabel.equalsIgnoreCase("l")){
-				sendMessage(player, ChatChannel.LOCAL, arrayToString(args));
-				return true;
-			} else if (commandLabel.equalsIgnoreCase("c")){
-				sendMessage(player, ChatChannel.CLAN, arrayToString(args));
-				return true;
-			} else if (commandLabel.equalsIgnoreCase("m")){
-				sendMessage(player, ChatChannel.MULTI, arrayToString(args));
-				return true;
-			} else {
-				sendMessage(player, null, arrayToString(args));
-				return true;
-			} 
+			else if (commandLabel.equalsIgnoreCase("local") || commandLabel.equalsIgnoreCase("l"))
+			{
+				setPlayerChannel(player, ChatChannel.LOCAL);
+			}
+			else if (commandLabel.equalsIgnoreCase("m"))
+			{
+				setPlayerChannel(player, ChatChannel.MULTI);
+			}
+			else if (commandLabel.equalsIgnoreCase("p"))
+			{
+				if (plugin.playerManager.isPlayerInParty(player))
+				{
+					setPlayerChannel(player, ChatChannel.PARTY);
+				}
+				else
+				{
+					player.sendMessage(NaxColor.MSG + "You are not in a party.");
+				}
+			}
+			else if (commandLabel.equalsIgnoreCase("chat"))
+			{
+				player.sendMessage(NaxColor.MSG + "----");
+				player.sendMessage(NaxColor.COMMAND + "Chat Commands:");
+				player.sendMessage(NaxColor.WHITE + "/g" + NaxColor.MSG + " for " + NaxColor.WHITE + "General Chat");
+				player.sendMessage(NaxColor.LOCAL + "/local" + NaxColor.MSG + " for " + NaxColor.LOCAL + "Local Chat");
+				player.sendMessage(NaxColor.MULTI + "/m" + NaxColor.MSG + " for " + NaxColor.MULTI + "Multi World Chat");
+				player.sendMessage(NaxColor.PARTY + "/p" + NaxColor.MSG + " for " + NaxColor.PARTY + "Party Chat");
+				
+				player.sendMessage(NaxColor.MSG + "/msg [name] <text> for whispering");
+				player.sendMessage(NaxColor.MSG + "/r <text> for replying to a sent whisper");
+			}
+		}
+		else
+		{
+			if (commandLabel.equalsIgnoreCase("g"))
+			{
+				sendMessage(player, ChatChannel.GENERAL, NaxUtil.arrayToString(args));
+			}
+			else if (commandLabel.equalsIgnoreCase("local") || commandLabel.equalsIgnoreCase("l"))
+			{
+				sendMessage(player, ChatChannel.LOCAL, NaxUtil.arrayToString(args));
+			}
+			else if (commandLabel.equalsIgnoreCase("m"))
+			{
+				sendMessage(player, ChatChannel.MULTI, NaxUtil.arrayToString(args));
+			}
+			else if (commandLabel.equalsIgnoreCase("p"))
+			{
+				if (plugin.playerManager.isPlayerInParty(player))
+				{
+					plugin.playerManager.getParty(player).chat(player, NaxUtil.arrayToString(args));
+				}
+				else
+				{
+					player.sendMessage(NaxColor.MSG + "You are not in a party.");
+				}
+			}
+			else
+			{
+				sendMessage(player, null, NaxUtil.arrayToString(args));
+			}
 		}
 		
-		return false;
+		return true;
 	}
 	
-	private void getList(Player player){
-		Set<Player> players = getLocalVisiblePlayers(player);
-		if (players.size() == 0){
-			player.sendMessage(Naxcraft.MSG_COLOR + "No one can hear you squeal!");
+	private void getList(Player player)
+	{
+		List<Player> players = plugin.playerManager.handlePlayerChat(player, getLocalVisiblePlayers(player));
+		if (players.size() == 0)
+		{
+			player.sendMessage(NaxColor.MSG + "No one can hear you squeal!");
 			return;
-		} else {
-			String message = players.size() + "" + Naxcraft.MSG_COLOR + " Nearby players: ";
+		}
+		else
+		{
+			String message = players.size() + "" + NaxColor.MSG + " Nearby players: ";
 			Iterator<Player> iter = players.iterator();
-			for (int i = 0; iter.hasNext(); i++){
+			for (int i = 0; iter.hasNext(); i++)
+			{
 				Player p = iter.next();
-				if (i != 0) message += Naxcraft.MSG_COLOR + ", ";
+				if (i != 0) message += NaxColor.MSG + ", ";
 				message += p.getDisplayName();
 			}
 			player.sendMessage(message);
@@ -141,131 +212,152 @@ public class NaxcraftChatCommand {
 		}
 	}
 	
-	private void sendMessage(Player player, ChatChannel channel, String message){
+	private void sendMessage(Player player, ChatChannel channel, String message)
+	{
 		if (channel == null) channel = playerChannels.get(player);
 		if (channel == null) channel = ChatChannel.GENERAL;
 		
-		int debug_players = 2; //supposed to be 2
-		
-		switch (channel){
-		case MULTI:
-			Set<Player>allPlayers = getAllWorldPlayers(player);
-			
-			ChatColor color = Naxcraft.WORLD_COLOR;
-			
-			if(allPlayers.size() < debug_players){
-				player.sendMessage(Naxcraft.MSG_COLOR + "There is no one. No. One.");
-				break;
-			}
-			
-			if(player.getWorld().getName().endsWith("_nether"))
+		if (channel == ChatChannel.PARTY)
+		{
+			if (plugin.playerManager.isPlayerInParty(player))
 			{
-				color = Naxcraft.NETHER_COLOR;
+				plugin.playerManager.getParty(player).chat(player, message);
+				return;
 			}
-			
-			for(Player p : allPlayers){
-				p.sendMessage(Naxcraft.MSG_COLOR + "[" + color + plugin.getWorldName(player.getWorld()) + Naxcraft.MSG_COLOR + "] " + color + "<" + plugin.getNickName(player.getName()) + color + "> " + Naxcraft.DEFAULT_COLOR + message);
+			else
+			{
+				player.sendMessage(NaxColor.MSG + "You are no longer in a party, switching to General Chat.");
+				setPlayerChannel(player, ChatChannel.GENERAL);
+				channel = ChatChannel.GENERAL;
 			}
-			plugin.log.info("M: " + player.getName() + ": " + message);
-			break;
-		case GENERAL:
-			Set<Player> global = getGlobalPlayers(player);
-			if (global.size() < debug_players){
-				player.sendMessage(Naxcraft.MSG_COLOR + "You're just a small town girl...");
-				break;
-			}
-			//player.sendMessage(Naxcraft.MSG_COLOR + "<" + plugin.getNickName(player.getName()) + Naxcraft.MSG_COLOR + ">" + Naxcraft.DEFAULT_COLOR + CHAT_SEPERATOR + message);
-			for (Player p : global){
-				p.sendMessage(Naxcraft.DEFAULT_COLOR + "<" + plugin.getNickName(player.getName()) + Naxcraft.DEFAULT_COLOR + ">" + Naxcraft.DEFAULT_COLOR + CHAT_SEPERATOR + message);
-			}
-			plugin.log.info("G: " + player.getName() + ": " + message);
-			break;
-		case LOCAL:
-			Set<Player> local = getLocalPlayers(player);
-			int visibleLocalPlayers = getLocalNumber(player); 
-			
-			if (local.size() < 1){
-				player.sendMessage(Naxcraft.MSG_COLOR + "Nobody is close enough to hear you scream.");
-				break;
-			}
-			player.sendMessage(ChatColor.GREEN + "[L " + Naxcraft.DEFAULT_COLOR + visibleLocalPlayers + ChatColor.GREEN  + "] <" + plugin.getNickName(player.getName()) + ChatColor.GREEN + ">" + Naxcraft.DEFAULT_COLOR + CHAT_SEPERATOR + message);
-			for (Player p : local){
-				p.sendMessage(ChatColor.GREEN + "[L " + Naxcraft.DEFAULT_COLOR + visibleLocalPlayers + ChatColor.GREEN  + "] <" + plugin.getNickName(player.getName()) + ChatColor.GREEN + ">" + Naxcraft.DEFAULT_COLOR + CHAT_SEPERATOR + message);
-			}
-			plugin.log.info("L: " + player.getName() + ": " + message);
-			break;
-		case CLAN:
-			//TODO: ADD WORLD PREFIX IF OUTSIDE TARGET WORLD.
-			NaxcraftClan clan = plugin.clanCommand.getPlayerClan(player);
-			if (clan == null){
-				player.sendMessage(Naxcraft.MSG_COLOR + "You don't belong to any clans");
-				break;
-			}
-			if(clan.getOnlineMembers().size() < debug_players){
-				player.sendMessage(Naxcraft.MSG_COLOR + "None of your members are online.");
-				break;
-			}
-			for(Player p : clan.getOnlineMembers()){
-				if(player.getWorld().equals(p.getWorld())){
-					p.sendMessage(Naxcraft.CLAN_COLOR + "[C] <" + plugin.getNickName(player.getName()) + Naxcraft.CLAN_COLOR + ">" + Naxcraft.MSG_COLOR + CHAT_SEPERATOR + Naxcraft.DEFAULT_COLOR + message);
+		}
+		
+		message = parseMessage(player, message);
+		
+		switch (channel)
+		{
+			case MULTI:
+				List<Player> allPlayers = plugin.playerManager.handlePlayerChat(player, getAllWorldPlayers(player));
 				
-				} else {
-					p.sendMessage(Naxcraft.CLAN_COLOR + "[C "+ Naxcraft.WORLD_COLOR + plugin.getWorldName(player.getWorld()) + Naxcraft.CLAN_COLOR + "] <" + plugin.getNickName(player.getName())  + Naxcraft.CLAN_COLOR + ">" + CHAT_SEPERATOR + Naxcraft.DEFAULT_COLOR + message);
+				ChatColor color = Naxcraft.WORLD_COLOR;
+				
+				if (allPlayers.size() < debug_players)
+				{
+					player.sendMessage(NaxColor.MSG + "There is no one. No. One.");
+					break;
 				}
-			}
-			plugin.log.info("C: " + player.getName() + ": " + message);
-			return;
+				
+				if (player.getWorld().getName().endsWith("_nether"))
+				{
+					color = Naxcraft.NETHER_COLOR;
+				}
+				
+				for (Player p : allPlayers)
+				{
+					p.sendMessage(NaxColor.MSG + "[" + color + plugin.getWorldName(player.getWorld()) + NaxColor.MSG + "] " + color + "<" + plugin.getNickName(player.getName()) + color + "> " + NaxColor.WHITE + message);
+				}
+				plugin.log.info("M: [" + plugin.getWorldName(player.getWorld()) + "] " + player.getName() + ": " + message);
+				break;
+			case GENERAL:
+				List<Player> global = plugin.playerManager.handlePlayerChat(player, getGlobalPlayers(player));
+				if (global.size() < debug_players)
+				{
+					player.sendMessage(NaxColor.MSG + "You're just a small town girl...");
+					break;
+				}
+				// player.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(player.getName()) + NaxColor.MSG + ">" + NaxColor.WHITE + CHAT_SEPERATOR + message);
+				for (Player p : global)
+				{
+					p.sendMessage(plugin.getTitles(player) + NaxColor.WHITE + "<" + plugin.getNickName(player) + NaxColor.WHITE + ">" + NaxColor.WHITE + CHAT_SEPERATOR + message);
+				}
+				plugin.log.info("G: " + player.getName() + ": " + message);
+				break;
+			case LOCAL:
+				List<Player> local = plugin.playerManager.handlePlayerChat(player, getLocalPlayers(player));
+				int visibleLocalPlayers = getLocalNumber(player);
+				
+				if (local.size() < 1)
+				{
+					player.sendMessage(NaxColor.MSG + "Nobody is close enough to hear you scream.");
+					break;
+				}
+				player.sendMessage(NaxColor.LOCAL + "[L " + NaxColor.WHITE + visibleLocalPlayers + NaxColor.LOCAL + "] <" + plugin.getNickName(player.getName()) + NaxColor.LOCAL + ">" + NaxColor.WHITE + CHAT_SEPERATOR + message);
+				for (Player p : local)
+				{
+					p.sendMessage(NaxColor.LOCAL + "[L " + NaxColor.WHITE + visibleLocalPlayers + NaxColor.LOCAL + "] <" + plugin.getNickName(player.getName()) + NaxColor.LOCAL + ">" + NaxColor.WHITE + CHAT_SEPERATOR + message);
+				}
+				plugin.log.info("Local: [L " + visibleLocalPlayers + "] " + player.getName() + ": " + message);
+				break;
 		}
 	}
 	
-	private void setPlayerChannel(Player player, ChatChannel channel){
-		switch (channel){
-		case GENERAL:
-			if (!playerChannels.containsKey(player) || playerChannels.get(player) == ChatChannel.GENERAL){
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are already in the " + Naxcraft.MSG_COLOR + "general" + Naxcraft.MSG_COLOR +" channel.");
-				return;
-			} else {
-				playerChannels.put(player, channel);
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are now in the " + Naxcraft.DEFAULT_COLOR + "general" + Naxcraft.MSG_COLOR +" channel.");
-				return;
-			}
-		case LOCAL:
-			if (playerChannels.containsKey(player) && playerChannels.get(player) == ChatChannel.LOCAL){
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are already in the " + Naxcraft.MSG_COLOR + "local" + Naxcraft.MSG_COLOR +" channel.");
-				return;
-			} else {
-				playerChannels.put(player, channel);
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are now in the " + ChatColor.GREEN + "local" + Naxcraft.MSG_COLOR +" channel.");
-				return;
-			}
-		case CLAN:
-			if (playerChannels.containsKey(player) && playerChannels.get(player) == ChatChannel.CLAN){
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are already in the " + Naxcraft.MSG_COLOR + "clan" + Naxcraft.MSG_COLOR +" channel.");
-				return;
-			} else {
-				playerChannels.put(player, channel);
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are now in the " + Naxcraft.CLAN_COLOR + "clan" + Naxcraft.MSG_COLOR +" channel.");
-				return;
-			}
-		case MULTI:
-			if(playerChannels.containsKey(player) && playerChannels.get(player) == ChatChannel.MULTI){
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are already in the " + Naxcraft.MSG_COLOR + "multi world" + Naxcraft.MSG_COLOR +" channel.");
-				return;
-			} else {
-				playerChannels.put(player, channel);
-				player.sendMessage(Naxcraft.MSG_COLOR + "You are now in the " + Naxcraft.WORLD_COLOR + "multi world" + Naxcraft.MSG_COLOR +" channel.");
-				return;
-			}
-		}
+	private void setPlayerChannel(Player player, ChatChannel channel)
+	{
+		switch (channel)
+		{
+			case GENERAL:
+				if (!playerChannels.containsKey(player) || playerChannels.get(player) == ChatChannel.GENERAL)
+				{
+					player.sendMessage(NaxColor.MSG + "You are already in the " + NaxColor.MSG + "general" + NaxColor.MSG + " channel.");
+					return;
+				}
+				else
+				{
+					playerChannels.put(player, channel);
+					player.sendMessage(NaxColor.MSG + "You are now in the " + NaxColor.WHITE + "general" + NaxColor.MSG + " channel.");
+					return;
+				}
+			case LOCAL:
+				if (playerChannels.containsKey(player) && playerChannels.get(player) == ChatChannel.LOCAL)
+				{
+					player.sendMessage(NaxColor.MSG + "You are already in the " + NaxColor.MSG + "local" + NaxColor.MSG + " channel.");
+					return;
+				}
+				else
+				{
+					playerChannels.put(player, channel);
+					player.sendMessage(NaxColor.MSG + "You are now in the " + NaxColor.LOCAL + "local" + NaxColor.MSG + " channel.");
+					return;
+				}
+				
+			case PARTY:
+				if (playerChannels.containsKey(player) && playerChannels.get(player) == ChatChannel.PARTY)
+				{
+					player.sendMessage(NaxColor.MSG + "You are already in the " + NaxColor.MSG + "party" + NaxColor.MSG + " channel.");
+				}
+				else
+				{
+					playerChannels.put(player, channel);
+					player.sendMessage(NaxColor.MSG + "You are now in the " + NaxColor.PARTY + "party" + NaxColor.MSG + " channel.");
+				}
+				break;
 			
+			case MULTI:
+				if (playerChannels.containsKey(player) && playerChannels.get(player) == ChatChannel.MULTI)
+				{
+					player.sendMessage(NaxColor.MSG + "You are already in the " + NaxColor.MSG + "multi world" + NaxColor.MSG + " channel.");
+					return;
+				}
+				else
+				{
+					playerChannels.put(player, channel);
+					player.sendMessage(NaxColor.MSG + "You are now in the " + Naxcraft.WORLD_COLOR + "multi world" + NaxColor.MSG + " channel.");
+					return;
+				}
+		}
+		
 		return;
 	}
 	
-	private Set<Player>getLocalPlayers(Player player){
-		Set<Player>players = new HashSet<Player>();
-		for(Player p : server.getOnlinePlayers()){
-			if (!player.equals(p) &&getDistance(player, p) <= LOCAL_DISTANCE){
-				if(player.getWorld().equals(p.getWorld())){
+	private List<Player> getLocalPlayers(Player player)
+	{
+		List<Player> players = new ArrayList<Player>();
+		for (Player p : server.getOnlinePlayers())
+		{
+			if (!player.equals(p) && getDistance(player, p) <= LOCAL_DISTANCE)
+			{
+				if (player.getWorld().equals(p.getWorld()))
+				{
 					players.add(p);
 				}
 			}
@@ -273,12 +365,17 @@ public class NaxcraftChatCommand {
 		return players;
 	}
 	
-	private Set<Player>getLocalVisiblePlayers(Player player){
-		Set<Player>players = new HashSet<Player>();
-		for(Player p : server.getOnlinePlayers()){
-			if (!player.equals(p) &&getDistance(player, p) <= LOCAL_DISTANCE){
-				if(player.getWorld().equals(p.getWorld())){
-					if(!plugin.stealthCommand.isInvisible(p)){
+	private List<Player> getLocalVisiblePlayers(Player player)
+	{
+		List<Player> players = new ArrayList<Player>();
+		for (Player p : server.getOnlinePlayers())
+		{
+			if (!player.equals(p) && getDistance(player, p) <= LOCAL_DISTANCE)
+			{
+				if (player.getWorld().equals(p.getWorld()))
+				{
+					if (!plugin.stealthCommand.isInvisible(p))
+					{
 						players.add(p);
 					}
 				}
@@ -287,13 +384,20 @@ public class NaxcraftChatCommand {
 		return players;
 	}
 	
-	private int getLocalNumber(Player player){
+	private int getLocalNumber(Player player)
+	{
 		int num = 0;
 		
-		for(Player p : server.getOnlinePlayers()){
-			if (!player.equals(p) && getDistance(player, p) <= LOCAL_DISTANCE){
-				if(player.getWorld().equals(p.getWorld())){
-					num++;
+		for (Player p : server.getOnlinePlayers())
+		{
+			if (!player.equals(p) && getDistance(player, p) <= LOCAL_DISTANCE)
+			{
+				if (player.getWorld().equals(p.getWorld()))
+				{
+					if (!plugin.stealthCommand.isInvisible(p))
+					{
+						num++;
+					}
 				}
 			}
 		}
@@ -301,53 +405,107 @@ public class NaxcraftChatCommand {
 		return num;
 	}
 	
-	
-	private Set<Player>getGlobalPlayers(Player player){
-		Set<Player>players = new HashSet<Player>();
-		for(Player p : server.getOnlinePlayers()){
-			if(player.getWorld().equals(p.getWorld())){
+	private List<Player> getGlobalPlayers(Player player)
+	{
+		List<Player> players = new ArrayList<Player>();
+		for (Player p : server.getOnlinePlayers())
+		{
+			if (player.getWorld().equals(p.getWorld()))
+			{
 				players.add(p);
 			}
 		}
 		return players;
 	}
 	
-	private Set<Player>getAllWorldPlayers(Player player){
-		Set<Player>players = new HashSet<Player>();
-		for(Player p : server.getOnlinePlayers()){
+	private List<Player> getAllWorldPlayers(Player player)
+	{
+		List<Player> players = new ArrayList<Player>();
+		for (Player p : server.getOnlinePlayers())
+		{
 			players.add(p);
 		}
 		return players;
 	}
 	
-	private double getDistance(Player p1, Player p2){
+	private double getDistance(Player p1, Player p2)
+	{
 		Location loc1 = p1.getLocation();
 		Location loc2 = p2.getLocation();
 		
 		return Math.sqrt(Math.pow(loc1.getX() - loc2.getX(), 2) + Math.pow(loc1.getY() - loc2.getY(), 2) + Math.pow(loc1.getZ() - loc2.getZ(), 2));
 	}
-	private String arrayToString(String[] array){
-		StringBuffer buffer = new StringBuffer();
-		String seperator = " ";
-		int newWords = 0;
-		if(array.length > 0){
-			for(int i = 0; i < array.length; i++){
-				if(!array[i].equals("")){
-					if(newWords != 0) buffer.append(seperator);
-					buffer.append(array[i]);
-					newWords++;
-				}
+	
+	public String parseMessage(Player player, String str)
+	{
+		str = str.replaceAll("<3+", ChatColor.RED + "<3" + ChatColor.WHITE);
+		str = str.replaceAll("E>+", ChatColor.RED + "E>" + ChatColor.WHITE);
+		
+		for (String s : plugin.cityManager.citySpawns.keySet())
+		{
+			str = str.replaceAll("(?i)" + s, NaxColor.CITY + s + NaxColor.WHITE);
+		}
+		
+		for (NaxGate g : plugin.warpgateCommand.gates)
+		{
+			str = str.replaceAll("(?i)" + g.getName(), NaxColor.CITY + g.getName() + NaxColor.WHITE);
+		}
+		
+		for (NaxPlayer p : plugin.playerManager.players)
+		{
+			if (p.rank.isDemiAdmin())
+			{
+				str = str.replaceAll("(?i)" + p.name, p.getChatName() + NaxColor.WHITE);
 			}
 		}
 		
-		return buffer.toString();
+		List<Integer> counts = new ArrayList<Integer>();
+		
+		for (int i = 0; i < str.length(); i++)
+		{
+			if (str.charAt(i) == '@') counts.add(i);
+		}
+		
+		for (int start : counts)
+		{
+			System.out.println("Checking!");
+			
+			int i = 1;
+			
+			while (start + i < str.length() && str.charAt(start + i) != ' ')
+			{
+				i++;
+			}
+			
+			String name = str.substring(start + 1, start + i);
+			System.out.println(name);
+			NaxPlayer p = plugin.playerManager.getPlayer(name);
+			
+			if (p == null)
+			{
+				str.replaceFirst("@", "");
+			}
+			else
+			{
+				System.out.println("replacing!");
+				str = str.replaceFirst("@" + name, p.getChatName());
+			}
+		}
+		
+		String str2 = str.replaceFirst(">>>", ">"); // disabled
+		if (!str.equals(str2))
+		{
+			player.sendMessage(NaxColor.MSG + "Nice try.");
+		}
+		
+		return str;
 	}
-
 }
 
-enum ChatChannel{
+enum ChatChannel
+{
 	GENERAL,
 	LOCAL,
-	CLAN,
-	MULTI
+	MULTI,
+	PARTY
 }

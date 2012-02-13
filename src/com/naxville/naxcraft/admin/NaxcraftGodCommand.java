@@ -7,7 +7,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 //import org.bukkit.ChatColor;
 
+import com.naxville.naxcraft.NaxColor;
 import com.naxville.naxcraft.Naxcraft;
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
 
 public class NaxcraftGodCommand {
 	
@@ -22,7 +24,7 @@ public class NaxcraftGodCommand {
 	
 	public boolean runGodCommand(CommandSender sender, String[] args){		
 		//is the player an Op? To be changed later.
-		if(sender instanceof Player && plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()) {
+		if(sender instanceof Player && plugin.playerManager.getPlayer((Player)sender).rank.isDemiAdmin()) {
 			
 			//if there are no arguments (/god)
 			if(args.length == 0){
@@ -36,6 +38,10 @@ public class NaxcraftGodCommand {
 				player.setHealth(20);
 				if(godMode(((Player)sender).getName())){
 					player.sendMessage(Naxcraft.MSG_COLOR + "You are now a god!");
+					if(plugin.playerManager.getPlayer(player).rank == PlayerRank.DEMI_MOD)
+					{
+						player.sendMessage(NaxColor.MSG + "Remember this is only for doing justice, don't play with this on, or any admin tool.");
+					}
 				} else {
 					player.sendMessage(Naxcraft.MSG_COLOR + "You are now a mortal.");
 				}

@@ -14,7 +14,7 @@ public class NaxcraftTimeCommand {
 	}
 	
 	public boolean runTimeCommand(CommandSender sender, String[] args){
-		if(plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()){
+		if(plugin.playerManager.getPlayer((Player)sender).rank.isDemiAdmin()){
 			if(args.length != 1) return false;
 			
 			if(args.length == 1){
@@ -44,7 +44,13 @@ public class NaxcraftTimeCommand {
 						}
 					}
 					
-				} else {
+				}
+				else if (args[0].equalsIgnoreCase("bloodmoon")) 
+				{
+					plugin.bloodMoonManager.runBloodMoonCommand((Player)sender, args);
+				}
+				else 
+				{
 					return false;
 				}
 			}

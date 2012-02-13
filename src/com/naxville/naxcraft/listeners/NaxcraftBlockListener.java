@@ -1,280 +1,302 @@
 package com.naxville.naxcraft.listeners;
 
-import org.bukkit.Location;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Minecart;
+import org.bukkit.entity.PoweredMinecart;
+import org.bukkit.entity.StorageMinecart;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.block.BlockDispenseEvent;
+import org.bukkit.event.block.BlockFormEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.inventory.ItemStack;
 
+import com.naxville.naxcraft.NaxColor;
 import com.naxville.naxcraft.Naxcraft;
-import com.naxville.naxcraft.land.NaxcraftGroup;
+import com.naxville.naxcraft.autoareas.AutoAreaManager.Flag;
+import com.naxville.naxcraft.autoareas.AutoBase;
+import com.naxville.naxcraft.autoareas.WorldBoundary;
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
 
-public class NaxcraftBlockListener extends BlockListener {
+public class NaxcraftBlockListener extends BlockListener
+{
 	public static Naxcraft plugin;
 	
-	public NaxcraftBlockListener(Naxcraft instance){
+	public NaxcraftBlockListener(Naxcraft instance)
+	{
 		plugin = instance;
 	}
 	
-	public void onBlockPhysics(BlockPhysicsEvent event){
-		if(event.isCancelled()) return;
+	public void onBlockPhysics(BlockPhysicsEvent event)
+	{
+		if (event.isCancelled()) return;
 		
 		plugin.warpgateCommand.handlePhysics(event);
 		
-		if(event.getBlock().getType() == Material.TNT){
+		if (event.getBlock().getType() == Material.TNT)
+		{
 			event.setCancelled(true);
 		}
 	}
 	
-	public void onBlockIgnite(BlockIgniteEvent event){
-		if (event.getCause() != IgniteCause.FLINT_AND_STEEL) 
+	public void onBlockDispense(BlockDispenseEvent event)
+	{
+		AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
+		
+		if (base != null && base.hasFlag(Flag.RAILWAY))
+		{
+			if (event.getItem().getType() == Material.MINECART || event.getItem().getType() == Material.POWERED_MINECART || event.getItem().getType() == Material.STORAGE_MINECART)
+			{
+				event.setCancelled(true);
+				
+				int data = event.getBlock().getData();
+				
+				Material m = event.getItem().getType();
+				
+				BlockFace face = null;
+				
+				switch (data)
+				{
+					case 2:
+						face = BlockFace.EAST;
+						break;
+					case 3:
+						face = BlockFace.WEST;
+						break;
+					case 4:
+						face = BlockFace.NORTH;
+						break;
+					case 5:
+					default:
+						face = BlockFace.SOUTH;
+				}
+				
+				Block target = event.getBlock().getRelative(face);
+				
+				if (target.getType() == Material.RAILS || target.getType() == Material.POWERED_RAIL)
+				{
+					if (m == Material.MINECART)
+					{
+						target.getWorld().spawn(target.getLocation(), Minecart.class);
+					}
+					else if (m == Material.POWERED_MINECART)
+					{
+						target.getWorld().spawn(target.getLocation(), PoweredMinecart.class);
+					}
+					else if (m == Material.STORAGE_MINECART)
+					{
+						target.getWorld().spawn(target.getLocation(), StorageMinecart.class);
+					}
+				}
+			}
+		}
+	}
+	
+	public void onBlockForm(BlockFormEvent event)
+	{
+		AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
+		
+		if (base != null && base.hasFlag(Flag.WEATHER))
+		{
+			event.setCancelled(true);
+		}
+	}
+	
+	public void onBlockFromTo(BlockFromToEvent event)
+	{
+		AutoBase from = plugin.autoAreaManager.getBase(event.getBlock());
+		AutoBase to = plugin.autoAreaManager.getBase(event.getToBlock());
+		
+		if (from != to)
+		{
+			event.setCancelled(true);
+		}
+	}
+	
+	public void onBlockIgnite(BlockIgniteEvent event)
+	{
+		if (event.getCause() != IgniteCause.FLINT_AND_STEEL)
 		{
 			event.setCancelled(true);
 			return;
 		}
-		event.setCancelled(plugin.autoAreaManager.canInteract(event.getPlayer(), event.getBlock()));
-		event.setCancelled(requestBuild(event.getPlayer(), event.getBlock().getLocation()));
+		event.setCancelled(!plugin.autoAreaManager.canInteract(event.getPlayer(), event.getBlock()));
 	}
 	
 	public void onSignChange(SignChangeEvent event)
 	{
 		plugin.shopManager.handleSign(event);
+		plugin.displayShopManager.handleSignChange(event);
+		
+		if (event.isCancelled()) return;
+		
+		if (plugin.playerManager.getPlayer(event.getPlayer()).rank.getId() < PlayerRank.VETERAN.getId()) { return; }
+		
+		int index = 0;
+		for (String line : event.getLines())
+		{
+			
+			Pattern p = Pattern.compile("^.*\\^.*$");
+			Matcher m = p.matcher(line);
+			
+			if (m.matches())
+			{
+				String newLine = "";
+				
+				for (String s : line.split("\\^"))
+				{
+					// System.out.println("' " + s + " '");
+					
+					if (s == null || s.isEmpty() || s == "") continue;
+					
+					char c = s.charAt(0);
+					
+					int i = -1;
+					
+					try
+					{
+						i = Integer.parseInt(c + "");
+					}
+					catch (Exception e)
+					{
+					}
+					
+					if (i == -1)
+					{
+						newLine += "^" + s;
+						continue;
+					}
+					else if (i == 1)
+					{
+						int i2 = 0;
+						
+						try
+						{
+							i2 = Integer.parseInt(s.charAt(1) + "");
+						}
+						catch (Exception e)
+						{
+							i2 = 0;
+						}
+						
+						if (i2 > 0)
+						{
+							i = 10;
+							i += i2;
+						}
+					}
+					
+					if (i == 0 || i == Naxcraft.COLORS.length - 1)
+					{
+						if (!plugin.playerManager.getPlayer(event.getPlayer()).rank.isAdmin())
+						{
+							newLine += "^" + s;
+						}
+					}
+					else if (i >= Naxcraft.COLORS.length)
+					{
+						newLine += "^" + s;
+					}
+					else
+					{
+						int start = i >= 10 ? 2 : 1;
+						s = s.substring(start);
+						
+						newLine += Naxcraft.COLORS[i] + s;
+					}
+				}
+				
+				event.setLine(index, newLine);
+			}
+			
+			index++;
+		}
 	}
 	
 	public void onBlockDamage(BlockDamageEvent event)
 	{
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		
 		plugin.autoAreaManager.handleBlockDamage(event);
 		
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		
-		if(event.getBlock().getType() == Material.TNT){
-			if(plugin.superCommand.isSuper(event.getPlayer().getName())){
-				event.setCancelled(false);
-				return;
-			}
-			
-			String groupName = plugin.groupCommand.requestGroup(event.getBlock().getWorld(), event.getBlock().getLocation());
-			if(groupName != ""){
-				
-				NaxcraftGroup group = plugin.groupCommand.groups.get(groupName);
-				if(group.isOwner(event.getPlayer().getName())){
-					if(group.isFlag("public") || group.isFlag("creative")){
-						event.setCancelled(true);
-						event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot detonate TNT in a public or creative area.");
-					}
-					
-				} else {
-					event.setCancelled(true);
-					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot detonate TNT another's area.");
-				}
-				
-			} else {				
-				event.setCancelled(true);
-				event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot detonate TNT in the wilderness.");
-			}
-			
-			return;
-		}
+		plugin.playerManager.handleBlockDamage(event);
 	}
 	
-	public void onBlockBreak(BlockBreakEvent event){		
-		if(event.isCancelled()) return;
+	public void onBlockBreak(BlockBreakEvent event)
+	{
+		if (event.isCancelled()) return;
 		
 		plugin.autoAreaManager.handleBlockBreak(event);
 		
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		plugin.atmManager.handleBlockBreak(event);
 		plugin.warpgateCommand.handleBreak(event);
 		plugin.shopManager.handleBlockBreak(event);
+		plugin.playerManager.handleBlockBreak(event);
+		plugin.displayShopManager.handleBlockBreak(event);
 		
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		
-		if(requestBuild(event.getPlayer(), event.getBlock().getLocation())){
+		if (event.getBlock().getType() == Material.GRAVEL)
+		{
 			event.setCancelled(true);
-			return;
 			
-		}
-		
-		String group = plugin.groupCommand.requestGroup(event.getBlock().getWorld(), event.getBlock().getLocation()); 
-		if(group != ""){
-			NaxcraftGroup naxgroup = plugin.groupCommand.groups.get(group);
-			if(naxgroup.isFlag("creative")){
-				Player player = (Player)event.getPlayer();
-				if(this.getBlockInstantBreak(player, event.getBlock())){
-					event.setCancelled(true);
-					event.getBlock().setType(Material.AIR);
-				}
+			event.getBlock().setType(Material.AIR);
+			
+			Random r = new Random();
+			
+			if (r.nextInt(5) == 0)
+			{
+				event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(Material.FLINT, 1));
+			}
+			else
+			{
+				event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(Material.GRAVEL, 1));
 			}
 		}
-		if(event.isCancelled()) return;
 	}
 	
-	public boolean getBlockInstantBreak(Player player, Block block){
-		if(plugin.superCommand.isSuper(player.getName())){
-			return true;
-		}
-		
-		if(player.getItemInHand().getType().equals(Material.GOLD_AXE) || player.getItemInHand().getType().equals(Material.GOLD_HOE) || player.getItemInHand().getType().equals(Material.GOLD_SPADE)||
-				player.getItemInHand().getType().equals(Material.GOLD_SWORD) || player.getItemInHand().getType().equals(Material.GOLD_PICKAXE)){
-			return false;
-		}
-			
-		
-		if(block.getType().equals(Material.BED) || block.getType().equals(Material.BED_BLOCK) || block.getType().equals(Material.BEDROCK) || 
-		   block.getType().equals(Material.CAKE) || block.getType().equals(Material.CAKE_BLOCK) || block.getType().equals(Material.IRON_DOOR_BLOCK) || 
-		   block.getType().equals(Material.IRON_DOOR) || block.getType().equals(Material.LEVER) || block.getType().equals(Material.NOTE_BLOCK) || 
-		   block.getType().equals(Material.SIGN) || block.getType().equals(Material.SIGN_POST) || block.getType().equals(Material.WALL_SIGN) || 
-		   block.getType().equals(Material.WOOD_DOOR) || block.getType().equals(Material.WOODEN_DOOR)){
-			   return false;
-		}
-		
-		return true;
-	}
-	
-	//@SuppressWarnings("deprecation")
 	public void onBlockPlace(BlockPlaceEvent event)
 	{
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		
 		plugin.autoAreaManager.handleBlockPlace(event);
+		plugin.playerManager.cheatingManager.handleBlockPlace(event);
 		plugin.mobCommand.handleBlockPlace(event);
 		plugin.atmManager.handleBlockPlace(event);
 		
-		if(event.isCancelled()) return;
+		WorldBoundary.handleBlockPlace(event);
 		
-		if(requestBuild(event.getPlayer(), event.getBlock().getLocation())){
+		if (event.isCancelled()) return;
+		
+		if (event.getBlock().getWorld().getName().startsWith("old_naxville"))
+		{
+			event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "Editing and deleting is not allowed in Old Naxville.");
 			event.setCancelled(true);
-			return;
-			
-		} else {
-			String group = plugin.groupCommand.requestGroup(event.getBlock().getWorld(), event.getBlock().getLocation()); 
-			if(group != ""){
-				NaxcraftGroup naxgroup = plugin.groupCommand.groups.get(group);
-				if(naxgroup.isFlag("creative")){
-					event.getPlayer().getItemInHand().setAmount(event.getPlayer().getItemInHand().getAmount()+1);
-					//event.getPlayer().updateInventory();
-					
-					if(event.getBlock().getType() == Material.TNT && !plugin.superCommand.isSuper(event.getPlayer().getName())){
-						event.setCancelled(true);
-					}
-				}
-				
-			} else {
-				if(event.getBlock().getType() == Material.TNT && !plugin.superCommand.isSuper(event.getPlayer().getName())){
-					
-					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not place TNT outside of areas you own.");
-					event.setCancelled(true);
-				}
-			}
-		}
-	}
-	
-	//TRUE = CANCELED, FALSE = ALLOWED TO BUILD
-	public boolean requestBuild (Player player, Location location){		
-		if(plugin.superCommand.isSuper(player.getName()) || !player.getWorld().getName().startsWith("old_naxville")){
-			return false;
 		}
 		
-		String group = plugin.groupCommand.requestGroup(player.getWorld(), location); 
-		if(group != ""){
-			NaxcraftGroup naxgroup = plugin.groupCommand.groups.get(group);
-			
-			if(naxgroup.isFlag("public")){
-				return false;
+		if (event.getBlock().getType() == Material.PUMPKIN && event.getBlock().getRelative(BlockFace.DOWN).getType() == Material.SNOW_BLOCK)
+		{
+			AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
+			if (base == null || !plugin.autoAreaManager.isOwner(event.getPlayer(), base))
+			{
+				event.setCancelled(true);
+				event.getPlayer().sendMessage(NaxColor.MSG + "You can't try to make snow golems outside areas you own.");
 			}
-			
-			if(naxgroup.isLock()){
-				if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
-					return false;
-					
-				} else {
-					player.sendMessage(Naxcraft.ADMIN_COLOR + "WARNING: This area is locked. Talk to an admin"); 
-					return true;
-				}
-			}
-			
-			if(plugin.frozenPlayers.containsKey(player.getName())){
-				return true;
-			}
-			
-			if(naxgroup.isOwner(player.getName().toLowerCase())){
-			
-				return false;
-				
-			} else {
-				
-				if(naxgroup.isHurt()){
-					String owners = naxgroup.getOwners();
-					player.damage(2);
-					player.sendMessage(Naxcraft.ERROR_COLOR + "This area is owned by " + owners + Naxcraft.ERROR_COLOR + ". If you attempt to build here you will die.");
-					return true;
-					
-				} else {
-					String owners = naxgroup.getOwner();
-					player.sendMessage(Naxcraft.ERROR_COLOR + "This area is owned by " + Naxcraft.DEFAULT_COLOR + owners + Naxcraft.ERROR_COLOR + ". You may not build here.");
-					return true;
-				}
-				
-			}
-			
 		}
-			
-		
-		return false;
-	}
-	
-	public boolean requestBuild (Player player, Location location, Boolean no_messages){		
-		if(plugin.superCommand.isSuper(player.getName())){
-			return false;
-		}
-		
-		String group = plugin.groupCommand.requestGroup(player.getWorld(), location); 
-		if(group != ""){
-			NaxcraftGroup naxgroup = plugin.groupCommand.groups.get(group);
-			
-			if(naxgroup.isFlag("public")){
-				return false;
-			}
-			
-			if(naxgroup.isLock()){
-				if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
-					return false;
-					
-				} else {
-					return true;
-				}
-			}
-			
-			if(plugin.frozenPlayers.containsKey(player.getName())){
-				return true;
-			}
-			
-			if(naxgroup.isOwner(player.getName().toLowerCase())){
-			
-				return false;
-				
-			} else {
-				
-				if(naxgroup.isHurt()){
-					player.damage(2);
-					return true;
-					
-				} else {
-					return true;
-				}
-				
-			}
-			
-		}
-		return false;
 	}
 }

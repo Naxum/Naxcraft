@@ -11,7 +11,8 @@ import org.bukkit.entity.Player;
  * }
  */
 
-public class NaxcraftWarpRunnable implements Runnable{
+public class NaxcraftWarpRunnable implements Runnable
+{
 	private static Naxcraft plugin;
 	private Player player;
 	private Location location;
@@ -26,7 +27,6 @@ public class NaxcraftWarpRunnable implements Runnable{
 	public void run()
 	{
 		plugin.homeCommand.warpPlayer(player, location);
-		plugin.warpingPlayers.remove(player.getName());
 		player.sendMessage(Naxcraft.SUCCESS_COLOR + "You made it!");
 	}
 	

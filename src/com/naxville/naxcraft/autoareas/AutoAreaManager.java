@@ -1,42 +1,55 @@
 package com.naxville.naxcraft.autoareas;
 
 import java.awt.Point;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.block.CraftDispenser;
+import org.bukkit.entity.Animals;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Creature;
+import org.bukkit.entity.EnderPearl;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.Snowman;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 
+import com.naxville.naxcraft.NaxColor;
+import com.naxville.naxcraft.NaxFile;
 import com.naxville.naxcraft.Naxcraft;
-import com.naxville.naxcraft.NaxcraftClan;
-import com.naxville.naxcraft.admin.NaxcraftConfiguration;
+import com.naxville.naxcraft.admin.SuperManager;
+import com.naxville.naxcraft.player.NaxPlayer;
+import com.naxville.naxcraft.player.PlayerManager.PlayerRank;
 
-public class AutoAreaManager 
+public class AutoAreaManager
 {
 	public Naxcraft plugin;
-	public NaxcraftConfiguration config;
+	public NaxFile config;
+	public SnowmenManager snowmenManager = new SnowmenManager(this);
 	
 	public List<AutoBase> bases = new ArrayList<AutoBase>();
 	public Map<Player, AutoCounter> counters = new HashMap<Player, AutoCounter>();
@@ -46,51 +59,82 @@ public class AutoAreaManager
 	public Map<Player, Point> cachePosition = new HashMap<Player, Point>();
 	public Map<Player, AutoBase> cacheBase = new HashMap<Player, AutoBase>();
 	
-	public List<FlagInfo> flags = new ArrayList<FlagInfo>();
-	public List<Material> uncreative = new ArrayList<Material>(); //blocks that won't instant break in creative areas.
 	public List<String> ids = new ArrayList<String>();
 	public List<Integer> keepDrops = new ArrayList<Integer>();
+	public List<Player> enderTeleports = new ArrayList<Player>();
 	
-	public static final String FILE_NAME = "AutoArea_Data";
-	public static final int CHUNK_BUFFER = 6;
-	public static final int BASE_BUFFER = 2;
+	public static final int CHUNK_BUFFER = 8;
+	public static final int BASE_BUFFER = 4;
 	public static final int SAME_OWNER_BUFFER = 10;
 	
 	public AutoAreaManager(Naxcraft plugin)
 	{
 		this.plugin = plugin;
+	}
+	
+	public enum Flag
+	{
+		PVP("PvP", "Protects owners from player damage.", 32, null, PlayerRank.MEMBER.getId()),
+		SAFE("Safe", "Protects owners from ALL damage.", 64, new Flag[] { Flag.PVP }, PlayerRank.MEMBER.getId()),
+		WEATHER("Weather", "Stops ice/snow from forming.", 32, null, PlayerRank.MEMBER.getId()),
+		FARMER("Farmer", "Protects animals from non-builder attacks.", 32, null, PlayerRank.MEMBER.getId()),
+		FOOD("Food", "Randomly lowers chance of losing food points.", 16, null, PlayerRank.MEMBER.getId()),
+
+		NO_PVP("NoPvP", "Protects everyone from player damage.", 32, new Flag[] { Flag.SAFE, Flag.PVP }, PlayerRank.VETERAN.getId()),
+		TRAPDOORS("Trapdoors", "Locks trapdoors from non-builders.", 16, null, PlayerRank.VETERAN.getId()),
+		CHESTS("Chests", "Locks chests and furnaces from non-builders.", 64, null, PlayerRank.VETERAN.getId()),
+		MERCHANT("Merchant", "Allows creation of shops (see site).", 64, new Flag[] { Flag.CHESTS }, PlayerRank.VETERAN.getId()),
+		HURT("Hurt", "Hurts any player attempting to alter an area.", 32, null, PlayerRank.VETERAN.getId()),
+		RAILWAY("Railway", "Allows rail station functionality.", 32, null, PlayerRank.VETERAN.getId()),
+		SNOW_GUARDS("SnowGuards", "Snowmen do damage.", 32, null, PlayerRank.VETERAN.getId()),
+		SNOW_BOUNCERS("SnowBouncers", "Snowmen attack non-builders.", 32, null, PlayerRank.VETERAN.getId()),
+		PEARLS("Pearls", "Ender pearls cause no damage on tp.", 16, null, PlayerRank.VETERAN.getId()),
+		FORGES("Forges", "Furnaces don't use up lava buckets.", 64, null, PlayerRank.VETERAN.getId()),
+
+		SANCTUARY("Sanctuary", "Protects everyone from ALL damage.", 64, new Flag[] { Flag.NO_PVP }, PlayerRank.MASTER.getId()),
+		CREATIVE("Creative", "Allows creative mode + flight", 256, null, PlayerRank.MASTER.getId()),
+		PUBLIC("Public", "Allows anyone to build in the area.", 32, new Flag[] { Flag.CREATIVE }, PlayerRank.MASTER.getId()),
+
+		LOCK("Lock", "Area can't be edited.", 0, null, PlayerRank.MODERATOR.getId()),
+		NO_EXPAND("NoExpand", "Area cannot expand.", 0, null, PlayerRank.MODERATOR.getId()),
+		NO_ADD("NoAdd", "Area cannot get new builders.", 0, null, PlayerRank.MODERATOR.getId()),
+		GRINDER("Grinder", "May not be functional.", 0, null, PlayerRank.MODERATOR.getId()),
+		JAIL("Jail", "Not functional.", 0, null, PlayerRank.MODERATOR.getId());
 		
-		//public
-		flags.add(new FlagInfo("PvP", "Protects owners from player damage.", 32, null));
-		flags.add(new FlagInfo("Safe", "Protects owners from ALL damage.", 64, "pvp"));
-		flags.add(new FlagInfo("NoPvP", "Protects everyone from player damage.", 64, "safe,pvp"));
-		flags.add(new FlagInfo("Sanctuary", "Protects everyone from ALL damage.", 128, "nopvp"));
+		public String displayName;
+		public String description;
+		public int cost;
+		public Flag[] required;
+		public int minimumRankId;
 		
-		//admin
-		flags.add(new FlagInfo("Creative", "Infinite blocks + instant break"));
-		flags.add(new FlagInfo("Public", "Allows anyone to build in the area."));
-		flags.add(new FlagInfo("Hurt", "Hurts any player attempting to alter an area."));
-		flags.add(new FlagInfo("Lock", "Area is locked by an Admin."));
-		flags.add(new FlagInfo("Grinder", "Allows mobs to be farmed for items."));
-		flags.add(new FlagInfo("Jail", "You cannot escape!"));
+		private Flag(String displayName, String description, int cost, Flag[] required, int minimumRankId)
+		{
+			this.displayName = displayName;
+			this.description = description;
+			this.cost = cost;
+			this.required = required;
+			this.minimumRankId = minimumRankId;
+		}
 		
-		uncreative.add(Material.BED_BLOCK);
-		uncreative.add(Material.CAKE_BLOCK);
-		uncreative.add(Material.BEDROCK);
-		uncreative.add(Material.IRON_DOOR_BLOCK);
-		uncreative.add(Material.IRON_DOOR);
-		uncreative.add(Material.LEVER);
-		uncreative.add(Material.NOTE_BLOCK);
-		uncreative.add(Material.SIGN);
-		uncreative.add(Material.SIGN_POST);
-		uncreative.add(Material.WALL_SIGN);
-		uncreative.add(Material.WOOD_DOOR);
-		uncreative.add(Material.WOODEN_DOOR);
+		public String toString()
+		{
+			return "" + displayName;
+		}
+		
+		public static Flag parseFlag(String s)
+		{
+			for (Flag f : values())
+			{
+				if (s.equalsIgnoreCase(f.displayName)) return f;
+			}
+			
+			return null;
+		}
 	}
 	
 	public void shutup(Player player)
 	{
-		if(counters.containsKey(player))
+		if (counters.containsKey(player))
 		{
 			counters.get(player).shutup = true;
 		}
@@ -98,86 +142,90 @@ public class AutoAreaManager
 	
 	public boolean flagsCommand(Player player, String args[])
 	{
-		if(args.length == 0 || (args.length == 1 && args[0].equalsIgnoreCase("help")))
+		if (args.length == 0 || (args.length == 1 && args[0].equalsIgnoreCase("help")))
 		{
 			player.sendMessage(Naxcraft.MSG_COLOR + "----");
 			player.sendMessage(Naxcraft.COMMAND_COLOR + "Flags: (use /flags <name> to see more info)");
+			NaxPlayer p = plugin.playerManager.getPlayer(player);
 			
-			for(FlagInfo flag : flags)
+			if (p.rank != PlayerRank.NOOB)
 			{
-				ChatColor color = Naxcraft.SUCCESS_COLOR;
-				
-				if(flag.adminOnly)
+				for (Flag flag : Flag.values())
 				{
-					color = Naxcraft.ADMIN_COLOR;
+					if (p.rank.getId() < flag.minimumRankId - 1) continue;
+					if (!p.rank.isAdmin() && PlayerRank.getRank(flag.minimumRankId) == PlayerRank.MODERATOR) continue;
+					
+					NaxColor color = NaxColor.LOCAL;
+					
+					if (p.rank.getId() < flag.minimumRankId)
+					{
+						color = NaxColor.ERR;
+					}
+					
+					String f = PlayerRank.getRank(flag.minimumRankId).getPrefix() + color + flag.displayName + NaxColor.DEMI_ADMIN + " " + flag.cost + "g " + NaxColor.MSG + ": ";
+					
+					f += Naxcraft.MSG_COLOR + flag.description;
+					
+					if (flag.required != null)
+					{
+						f += Naxcraft.ERROR_COLOR + " Reqs";
+					}
+					
+					player.sendMessage(f);
 				}
-				
-				String f = color + flag.name + Naxcraft.MSG_COLOR + ": ";
-				
-				if(!flag.adminOnly)
+				if (p.rank == PlayerRank.MEMBER)
 				{
-					f += "" + Naxcraft.DEFAULT_COLOR + flag.cost + "g" + Naxcraft.MSG_COLOR + " - ";
+					player.sendMessage(NaxColor.DEMI_ADMIN + "Use the /promote command with 32 gold ingots to unlock the red flags!");
 				}
-				
-				f += Naxcraft.MSG_COLOR + flag.description;
-				
-				if(flag.required != null)
+				else if (p.rank == PlayerRank.VETERAN)
 				{
-					f += Naxcraft.ERROR_COLOR + " Reqs";
+					player.sendMessage(NaxColor.DEMI_ADMIN + "Build some awesome stuff or donate to the server to unlock the red flags!");
 				}
-				
-				player.sendMessage(f);
+			}
+			else
+			{
+				player.sendMessage(NaxColor.MSG + "You can't buy any flags until you rank up! Use /join with 16 iron on you.");
 			}
 		}
-		else if(args.length == 1)
+		else if (args.length == 1)
 		{
-			FlagInfo flag = null;
+			Flag flag = null;
 			
-			for(FlagInfo f : flags)
+			for (Flag f : Flag.values())
 			{
-				if(args[0].equalsIgnoreCase(f.name))
+				if (args[0].equalsIgnoreCase(f.toString()))
 				{
 					flag = f;
 				}
 			}
 			
-			if(flag == null)
+			if (flag == null)
 			{
 				player.sendMessage(Naxcraft.MSG_COLOR + "The flag " + Naxcraft.ERROR_COLOR + args[0] + Naxcraft.MSG_COLOR + " does not exist.");
 				return true;
 			}
 			
-			ChatColor color = Naxcraft.SUCCESS_COLOR;
+			NaxColor color = NaxColor.WHITE;
 			
-			if(flag.adminOnly)
-			{
-				color = Naxcraft.ADMIN_COLOR;
-			}
-			
-			String f = color + flag.name + Naxcraft.MSG_COLOR + ": " + Naxcraft.DEFAULT_COLOR +  flag.cost + "g" + Naxcraft.MSG_COLOR + " - " + flag.description;
+			String f = color + flag.displayName + Naxcraft.MSG_COLOR + ": " + Naxcraft.DEFAULT_COLOR + flag.cost + "g" + Naxcraft.MSG_COLOR + " - " + flag.description;
 			String req = "";
 			
-			if(flag.required != null)
+			if (flag.required != null)
 			{
 				req += Naxcraft.ERROR_COLOR + " Prerequisites: ";
 				
 				int i = 0;
-				for(String p : flag.required.split(","))
+				for (Flag r : flag.required)
 				{
-					if(i > 0) req += Naxcraft.MSG_COLOR + " or ";
-					req += Naxcraft.DEFAULT_COLOR + p;
+					if (i > 0) req += Naxcraft.MSG_COLOR + " or ";
+					req += Naxcraft.DEFAULT_COLOR + "" + r;
 					i++;
 				}
 			}
 			
-			if(flag.adminOnly)
-			{
-				req += Naxcraft.MSG_COLOR + "This flag is only given by admins and cannot be bought.";
-			}
-			
 			player.sendMessage(Naxcraft.MSG_COLOR + "----");
 			player.sendMessage(f);
-			if(req != "") player.sendMessage(req);
+			if (req != "") player.sendMessage(req);
 		}
 		
 		return true;
@@ -190,87 +238,178 @@ public class AutoAreaManager
 	
 	public void handleEntityDamage(EntityDamageEvent event)
 	{
-		if(event.getEntity() instanceof Player)
+		if (event.getEntity() instanceof Player)
 		{
-			Player player = (Player)event.getEntity();
+			Player player = (Player) event.getEntity();
 			
 			AutoBase base = getBase(player);
 			
-			if(base != null)
+			if (base != null)
 			{
-				if(base.getFlag("sanctuary"))
+				if (event.getCause() == DamageCause.STARVATION)
 				{
-					event.setCancelled(true);
-				}
-				else if (base.getFlag("safe"))
-				{
-					if(isOwner(player, base))
+					if (base.hasFlag(Flag.FOOD))
 					{
-						event.setCancelled(true);
+						if (new Random().nextInt(2) == 0)
+						{
+							event.setCancelled(true);
+							player.setExhaustion(0);
+						}
 					}
 				}
-				else if (base.getFlag("pvp") || base.getFlag("nopvp"))
+				else
 				{
-					if(event instanceof EntityDamageByEntityEvent)
+					if (base.hasFlag(Flag.SANCTUARY) && !causedByEnderPearl(event))
 					{
-						EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent)event;
-						if(ev.getDamager() instanceof Player)
+						event.setCancelled(!plugin.bloodMoonManager.isBloodMoon(event.getEntity().getWorld()));
+					}
+					else if (base.hasFlag(Flag.SAFE) && !causedByEnderPearl(event))
+					{
+						if (isOwner(player, base))
 						{
-							if(base.getFlag("nopvp"))
+							if (plugin.bloodMoonManager.isBloodMoon(event.getEntity().getWorld()) && event instanceof EntityDamageByEntityEvent)
+							{
+								EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent) event;
+								
+								event.setCancelled(ev.getDamager() instanceof Monster);
+							}
+							else
 							{
 								event.setCancelled(true);
 							}
-							else if (base.getFlag("pvp"))
+						}
+					}
+					else if (!causedByEnderPearl(event) && (base.hasFlag(Flag.PVP) || base.hasFlag(Flag.NO_PVP)))
+					{
+						if (event instanceof EntityDamageByEntityEvent)
+						{
+							EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent) event;
+							if (ev.getDamager() instanceof Player)
 							{
-								if(isOwner(player, base))
+								if (base.hasFlag(Flag.NO_PVP))
+								{
+									event.setCancelled(true);
+								}
+								else if (base.hasFlag(Flag.PVP) && isOwner(player, base))
 								{
 									event.setCancelled(true);
 								}
 							}
 						}
 					}
+					else if (base.hasFlag(Flag.PEARLS) && causedByEnderPearl(event))
+					{
+						if (enderTeleports.remove(player))
+						{
+							System.out.println(player.getName() + " is getting hurt from ender pearling!");
+							event.setCancelled(true);
+						}
+					}
+				}
+			}
+			
+			if (event.isCancelled())
+			{
+				player.setFireTicks(0);
+			}
+		}
+		else if (event.getEntity() instanceof Animals)
+		{
+			AutoBase base = getBase(event.getEntity().getLocation());
+			
+			if (base != null && base.hasFlag(Flag.FARMER))
+			{
+				if (event instanceof EntityDamageByEntityEvent)
+				{
+					EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent) event;
+					
+					Player player = null;
+					
+					if (ev.getDamager() instanceof Player)
+					{
+						player = (Player) ev.getDamager();
+					}
+					else if (ev.getDamager() instanceof Arrow)
+					{
+						Arrow arrow = (Arrow) ev.getDamager();
+						
+						if (arrow.getShooter() instanceof Player)
+						{
+							player = (Player) arrow.getShooter();
+						}
+					}
+					
+					if (player != null && !isOwner(player, base))
+					{
+						player.sendMessage(NaxColor.MSG + "You may not harm livestock in this area.");
+						event.setCancelled(true);
+					}
 				}
 			}
 		}
-		else if (event.getEntity() instanceof Creature)
+		
+		if (event.getEntity() instanceof Creature && !event.isCancelled())
 		{
-			Creature creature = (Creature)event.getEntity();
-			if(creature.getHealth() - event.getDamage() <= 0)
+			Creature creature = (Creature) event.getEntity();
+			
+			if (creature.getHealth() - event.getDamage() <= 0)
 			{
-				if(event instanceof EntityDamageByEntityEvent)
+				AutoBase base = getBase(creature.getLocation().getBlock());
+				
+				if (event instanceof EntityDamageByEntityEvent)
 				{
-					keepDrops.add(creature.getEntityId());
+					if (base != null && !base.hasFlag(Flag.CREATIVE))
+					{
+						keepDrops.add(creature.getEntityId());
+					}
 				}
 				else
 				{
-					AutoBase base = getBase(creature.getLocation().getBlock());
-					
-					if(base != null && base.getFlag("grinder"))
+					if (base != null && base.hasFlag(Flag.GRINDER))
 					{
 						keepDrops.add(creature.getEntityId());
 					}
 				}
 			}
 		}
+		
+		if (event instanceof EntityDamageByEntityEvent && !event.isCancelled())
+		{
+			EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent) event;
+			
+			if (ev.getDamager() instanceof Snowball && ((Snowball) ev.getDamager()).getShooter() instanceof Snowman)
+			{
+				Snowman s = (Snowman) ((Snowball) ev.getDamager()).getShooter();
+				
+				AutoBase base = getBase(s.getLocation());
+				
+				if (base != null && base.hasFlag(Flag.SNOW_GUARDS) && ev.getDamage() == 0)
+				{
+					ev.setDamage(1);
+				}
+			}
+		}
+	}
+	
+	private boolean causedByEnderPearl(EntityDamageEvent event)
+	{
+		return (event.getCause() == DamageCause.FALL && event instanceof EntityDamageByEntityEvent && ((EntityDamageByEntityEvent) event).getDamager() instanceof EnderPearl);
 	}
 	
 	public void refreshCache(Player player)
 	{
-		if(cachePosition.containsKey(player))
-			cachePosition.remove(player);
+		if (cachePosition.containsKey(player)) cachePosition.remove(player);
 		
-		if(cacheWorld.containsKey(player))
-			cacheWorld.remove(player);
+		if (cacheWorld.containsKey(player)) cacheWorld.remove(player);
 		
-		if(cacheBase.containsKey(player))
-			cacheBase.remove(player);
+		if (cacheBase.containsKey(player)) cacheBase.remove(player);
 	}
 	
 	public void updateCaches(Point point)
 	{
-		for(Player player : cachePosition.keySet())
+		for (Player player : cachePosition.keySet())
 		{
-			if(cachePosition.get(player) == point)
+			if (cachePosition.get(player) == point)
 			{
 				cachePosition.put(player, null);
 				cacheBase.put(player, null);
@@ -288,31 +427,31 @@ public class AutoAreaManager
 	}
 	
 	public void handlePlayerMove(PlayerMoveEvent event)
-	{	
+	{
 		Player player = event.getPlayer();
 		
-		if(player.getWorld().getName().startsWith("old_naxville"))
+		if (player.getWorld().getName().startsWith("old_naxville"))
 		{
 			refreshCache(player);
 			return;
 		}
 		
-		if(!cachePosition.containsKey(player) || cachePosition.get(player) == null)
+		if (!cachePosition.containsKey(player) || cachePosition.get(player) == null)
 		{
 			cachePosition.put(player, getPoint(player));
 			cacheBase.put(player, getBase(player));
 		}
 		
-		if(cacheWorld.containsKey(player))
+		if (cacheWorld.containsKey(player))
 		{
-			if(cacheWorld.get(player).getName() != player.getWorld().getName())
+			if (cacheWorld.get(player).getName() != player.getWorld().getName())
 			{
 				cachePosition.put(player, null);
 				cacheBase.put(player, null);
 			}
 		}
 		
-		if(cachePosition.get(player) == getPoint(player))
+		if (cachePosition.get(player) == getPoint(player))
 		{
 			return;
 		}
@@ -324,91 +463,154 @@ public class AutoAreaManager
 		
 		AutoBase base = cacheBase.get(player);
 		
-		if(!within.containsKey(player))
-			within.put(player, null);
+		if (!within.containsKey(player)) within.put(player, null);
 		
-		if(base == null)
+		if (base == null)
 		{
-			if(within.get(player) != null)
+			if (within.get(player) != null)
 			{
 				player.sendMessage(Naxcraft.MSG_COLOR + "You are now in unprotected land.");
+				
+				if (within.get(player).hasFlag(Flag.SNOW_BOUNCERS))
+				{
+					snowmenManager.exitSnowmenBase(player, base);
+				}
+				
 				within.put(player, null);
+				
+				if (player.getGameMode() == GameMode.CREATIVE && !SuperManager.isSuper(player))
+				{
+					setSurvivalMode(player);
+				}
 			}
 			
 		}
 		else
-		{			
-			if(within.get(player) != base)
+		{
+			if (within.get(player) != base)
 			{
-				if(isOwner(player, base))
+				if (base.hasFlag(Flag.SNOW_BOUNCERS))
 				{
-					player.sendMessage(Naxcraft.MSG_COLOR + "You are now in land you own. Use /property for more info.");
+					snowmenManager.enterSnowmenBase(player, base);
+				}
+				
+				if (isOwner(player, base))
+				{
+					player.sendMessage(Naxcraft.MSG_COLOR + "You own this area; /property for help.");
 					within.put(player, base);
 				}
 				else
 				{
-					player.sendMessage(Naxcraft.MSG_COLOR + "You are now in " + base.getFounderName() + Naxcraft.MSG_COLOR + "'s land. Use /property for more info.");
+					if (base.otherOwners.isEmpty())
+					{
+						player.sendMessage(Naxcraft.MSG_COLOR + "This area is owned by " + base.getFounderName() + Naxcraft.MSG_COLOR + "; /property for help.");
+					}
+					else
+					{
+						player.sendMessage(Naxcraft.MSG_COLOR + "This area is owned by " + base.getFounderName() + Naxcraft.MSG_COLOR + ". Builders include "
+								+ base.getBuilderNames() + Naxcraft.MSG_COLOR + ". /property for help.");
+					}
 					within.put(player, base);
+					
+					if (player.getGameMode() == GameMode.CREATIVE && !SuperManager.isSuper(player))
+					{
+						setSurvivalMode(player);
+					}
 				}
 			}
 		}
+	}
+	
+	private void setSurvivalMode(Player player)
+	{
+		if (!SuperManager.isSuper(player))
+		{
+			player.getInventory().clear();
+			player.getInventory().setArmorContents(new ItemStack[] { null, null, null, null });
+		}
+		player.setGameMode(GameMode.SURVIVAL);
+		player.sendMessage(NaxColor.MSG + "You are now in survival mode.");
 	}
 	
 	public void handleBlockDamage(BlockDamageEvent event)
-	{	
+	{
 		AutoBase base = null;
-		if(getPoint(event.getPlayer()) == getPoint(event.getBlock()))
+		if (getPoint(event.getPlayer()) == getPoint(event.getBlock()))
 		{
 			base = cacheBase.get(event.getPlayer());
-		} 
+		}
 		else
 		{
 			base = getBase(event.getBlock());
 		}
-				
-		if(base != null)
+		
+		if (base == null)
 		{
-			if(base.getFlag("creative") && isOwner(event.getPlayer(), base) && !uncreative.contains(event.getBlock().getType()))
+			if (event.getBlock().getType() == Material.TNT && event.getItemInHand().getType() == Material.FLINT_AND_STEEL)
 			{
-				if(!event.getPlayer().getItemInHand().getType().toString().toLowerCase().startsWith("gold_"))
+				if (!SuperManager.isSuper(event.getPlayer()))
 				{
-					event.setInstaBreak(true);
+					event.setCancelled(true);
+					event.getBlock().setType(Material.AIR);
+					event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), new ItemStack(Material.TNT, 1));
 				}
 			}
 		}
 	}
 	
-	private Point getPoint(Block block) 
+	private Point getPoint(Block block)
 	{
 		return new Point(block.getChunk().getX(), block.getChunk().getZ());
 	}
-
+	
 	public void handleBlockBreak(BlockBreakEvent event)
 	{
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		
 		AutoBase base = null;
-		if(getPoint(event.getPlayer()) == getPoint(event.getBlock()))
+		if (getPoint(event.getPlayer()) == getPoint(event.getBlock()))
 		{
 			base = cacheBase.get(event.getPlayer());
-		} 
+		}
 		else
 		{
 			base = getBase(event.getBlock());
 		}
-			
-		if(base != null)
+		
+		if (base != null)
 		{
-			if(isOwner(event.getPlayer(), base))
-			{				
-				if(base.getFlag("creative"))
-				{					
-					event.getBlock().setType(Material.AIR);
+			if (!isOwner(event.getPlayer(), base))
+			{
+				if (base.hasFlag(Flag.HURT))
+				{
+					event.getPlayer().damage(4);
+					event.getPlayer().sendMessage(NaxColor.ERR + "You will die if you continue to place/break blocks here.");
 				}
+				else
+				{
+					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "This area is protected, you may not destroy here.");
+				}
+				
+				plugin.playerManager.handleKick(event.getPlayer(), "protected areas");
+				event.setCancelled(true);
 			}
 			else
 			{
-				event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "This area is protected, you may not destroy here.");
+				Player player = event.getPlayer();
+				if (base.hasFlag(Flag.CREATIVE) && player.getGameMode() == GameMode.SURVIVAL && !SuperManager.isSuper(player))
+				{
+					player.sendMessage(NaxColor.MSG + "You cannot break blocks while in a creative-flagged area when you're in survival mode!");
+					event.setCancelled(true);
+				}
+			}
+		}
+		else
+		{
+			Player player = event.getPlayer();
+			
+			if (player.getGameMode() == GameMode.CREATIVE && !SuperManager.isSuper(player))
+			{
+				player.sendMessage(NaxColor.MSG + "You cannot break blocks outside of your creative area!");
 				event.setCancelled(true);
 			}
 		}
@@ -416,185 +618,331 @@ public class AutoAreaManager
 	
 	public void handleBlockPlace(BlockPlaceEvent event)
 	{
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		
-		AutoBase base = null;
-		Player player = event.getPlayer();
-		
-		if(getPoint(event.getPlayer()) == getPoint(event.getBlock()))
-		{
-			base = cacheBase.get(event.getPlayer());
-		} 
-		else
-		{
-			base = getBase(event.getBlock());
-		}
-		
-		if(base != null)
-		{
-			
-			if(!isOwner(player, base) && !plugin.superCommand.isSuper(player.getName()))
-			{			
-				event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not build here, this area is protected.");
-				event.setCancelled(true);
-			}
-			else
-			{
-				if(base.getFlag("creative"))
-				{
-					event.getPlayer().getItemInHand().setAmount(event.getPlayer().getItemInHand().getAmount()+1);
-				}
-			}
-		}
-		else
-		{
-			count(player, event.getBlock());
-		}
+		event.setCancelled(placeEventCancelled(event.getPlayer(), event.getBlock()));
 	}
 	
-	public void handlePlayerInteract(PlayerInteractEvent event)
+	public boolean placeEventCancelled(Player player, Block block)
 	{
-		if(event.isCancelled()) return;
-		
-		if(plugin.superCommand.isSuper(event.getPlayer().getName())) return;
-		
-		if(event.getAction() == Action.RIGHT_CLICK_BLOCK)
-		{
-			if(event.getClickedBlock().getType() == Material.DISPENSER)
-			{
-				if(!canInteract(event.getPlayer(), event.getClickedBlock()))
-				{
-					event.setCancelled(true);
-					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not open others' dispensers.");
-				}
-			}
-			else if(event.getClickedBlock().getType() == Material.TRAP_DOOR)
-			{
-				if(!canInteract(event.getPlayer(), event.getClickedBlock()))
-				{
-					event.setCancelled(true);
-					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not interact with others' trapdoors.");
-				}
-			}
-			else if 
-			(
-			   event.getItem() != null &&
-			   (
-			   event.getItem().getType() == Material.PAINTING || 
-			   event.getItem().getType() == Material.BUCKET ||
-			   event.getItem().getType() == Material.LAVA_BUCKET ||
-			   event.getItem().getType() == Material.WATER_BUCKET ||
-			   event.getItem().getType() == Material.SIGN ||
-			   event.getItem().getType() == Material.SIGN_POST || 
-			   event.getItem().getType() == Material.BOAT ||
-			   event.getItem().getType() == Material.FLINT_AND_STEEL ||
-			   event.getItem().getType() == Material.MINECART ||
-			   event.getItem().getType() == Material.POWERED_MINECART ||
-			   event.getItem().getType() == Material.REDSTONE ||
-			   event.getItem().getType() == Material.REDSTONE_TORCH_ON ||
-			   event.getItem().getType() == Material.REDSTONE_TORCH_OFF ||
-			   event.getItem().getType() == Material.REDSTONE_WIRE || 
-			   event.getItem().getType() == Material.STORAGE_MINECART
-			   )
-			)
-			{
-				if(!canInteract(event.getPlayer(), event.getClickedBlock()))
-				{
-					event.setCancelled(true);
-					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not place that in this protected area.");
-				}
-			}
-		}
-		else if (event.getAction() == Action.LEFT_CLICK_BLOCK)
-		{
-			if(event.getClickedBlock().getType() == Material.TNT)
-			{
-				AutoBase base = getBase(event.getClickedBlock());
-				
-				if(base == null)
-				{
-					if(plugin.superCommand.isSuper(event.getPlayer().getName()))
-					{
-						return;
-					}
-					
-					event.setCancelled(true);
-					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot activate TNT in the wilderness.");
-				}
-				else if(!isOwner(event.getPlayer(), base))
-				{
-					event.setCancelled(true);
-					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "Knock it off.");
-				}
-				else //is the owner
-				{
-					if(plugin.superCommand.isSuper(event.getPlayer().getName()))
-					{
-						return;
-					}
-					
-					if(base.getFlag("creative"))
-					{
-						event.setCancelled(true);
-						event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot detonate TNT in creative areas.");
-					}
-				}
-			}
-		}
-	}
-		
-	private boolean ownsBases(Player player) 
-	{
-		for(AutoBase base : bases)
-		{
-			if(isOwner(player, base))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public boolean canInteract(Player player, Block block)
-	{
-		if(plugin.superCommand.isSuper(player.getName())) return true;
-		
 		AutoBase base = null;
 		
-		if(getPoint(player) == getPoint(block))
+		if (getPoint(player) == getPoint(block))
 		{
 			base = cacheBase.get(player);
-		} 
+		}
 		else
 		{
 			base = getBase(block);
 		}
 		
-		if(base == null)
+		if (base != null)
 		{
-			return true;
+			if (base.hasFlag(Flag.LOCK))
+			{
+				if (!SuperManager.isSuper(player))
+				{
+					player.sendMessage(NaxColor.ERR + "You may not edit this area, it is locked by an admin.");
+					return true;
+				}
+			}
+			
+			if (!isOwner(player, base) && !SuperManager.isSuper(player))
+			{
+				if (base.hasFlag(Flag.HURT))
+				{
+					player.damage(4);
+					player.sendMessage(NaxColor.ERR + "You will die if you continue to place/break blocks here.");
+				}
+				else
+				{
+					player.sendMessage(Naxcraft.MSG_COLOR + "You may not build here, this area is protected.");
+				}
+				plugin.playerManager.handleKick(player, "protected areas");
+				return true;
+			}
+		}
+		else
+		{
+			if (player.getGameMode() == GameMode.CREATIVE && !SuperManager.isSuper(player))
+			{
+				player.sendMessage(NaxColor.MSG + "You cannot build outside of your creative area!");
+				return true;
+			}
+			
+			if (block.getType() == Material.TNT || block.getType() == Material.PISTON_BASE || block.getType() == Material.PISTON_STICKY_BASE)
+			{
+				if (!SuperManager.isSuper(player))
+				{
+					player.sendMessage(Naxcraft.MSG_COLOR + "You may not place that in an area you do not own.");
+					return true;
+				}
+			}
+			else
+			{
+				count(player, block);
+			}
 		}
 		
-		if(isOwner(player, base))
+		return false;
+	}
+	
+	/**
+	 * Only called on Ender Pearl teleport.
+	 * 
+	 * @param event
+	 */
+	
+	public void handlePlayerTeleport(PlayerTeleportEvent event)
+	{
+		AutoBase base = getBase(event.getTo());
+		Player player = (Player) event.getPlayer();
+		
+		if (base == null) return;
+		
+		if (event.getCause() == TeleportCause.ENDER_PEARL)
+		{
+			if (!isOwner(event.getPlayer(), base))
+			{
+				event.setCancelled(true);
+			}
+			else
+			{
+				System.out.println(event.getPlayer().getName() + " is enter pearling!");
+				enderTeleports.add(event.getPlayer());
+			}
+		}
+		
+		if (!event.isCancelled() && player.getGameMode() == GameMode.CREATIVE)
+		{
+			AutoBase base2 = getBase(event.getFrom());
+			
+			if (!SuperManager.isSuper(player) && (base2 == null || base2 != base))
+			{
+				setSurvivalMode(player);
+			}
+		}
+	}
+	
+	public void handlePlayerInteract(PlayerInteractEvent event)
+	{
+		if (event.isCancelled()) return;
+		
+		if (SuperManager.isSuper(event.getPlayer())) return;
+		
+		if (event.getAction() == Action.RIGHT_CLICK_BLOCK)
+		{
+			if (event.getClickedBlock().getType() == Material.DISPENSER)
+			{
+				if (!canInteract(event.getPlayer(), event.getClickedBlock()))
+				{
+					event.setCancelled(true);
+					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not open others' dispensers.");
+				}
+			}
+			else if (event.getClickedBlock().getType() == Material.CHEST)
+			{
+				AutoBase base = getBase(event.getClickedBlock());
+				
+				if (base == null) return;
+				
+				if (!isOwner(event.getPlayer(), base))
+				{
+					if (base.hasFlag(Flag.CHESTS))
+					{
+						event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not open locked chests.");
+						plugin.playerManager.handleBadChestClick(event.getPlayer(), "locked");
+						event.setCancelled(true);
+					}
+					else
+					{
+						plugin.playerManager.handleBadChestClick(event.getPlayer(), "others'");
+					}
+				}
+				
+			}
+			else if (event.getClickedBlock().getType() == Material.FURNACE || event.getClickedBlock().getType() == Material.BURNING_FURNACE)
+			{
+				AutoBase base = getBase(event.getClickedBlock());
+				
+				if (base == null) return;
+				
+				if (!isOwner(event.getPlayer(), base))
+				{
+					if (base.hasFlag(Flag.CHESTS))
+					{
+						event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not open locked furnaces.");
+						event.setCancelled(true);
+					}
+					plugin.playerManager.handleBadFurnaceClick(event.getPlayer());
+				}
+				
+			}
+			else if (event.getClickedBlock().getType() == Material.BED_BLOCK)
+			{
+				if (!canInteract(event.getPlayer(), event.getClickedBlock()))
+				{
+					plugin.playerManager.handleUnownedBedClick(event.getPlayer());
+				}
+			}
+			else if (event.getItem() != null &&
+					(
+					event.getItem().getType() == Material.PAINTING ||
+							event.getItem().getType() == Material.BUCKET ||
+							event.getItem().getType() == Material.LAVA_BUCKET ||
+							event.getItem().getType() == Material.WATER_BUCKET ||
+							event.getItem().getType() == Material.SIGN ||
+							event.getItem().getType() == Material.SIGN_POST ||
+							event.getItem().getType() == Material.BOAT ||
+							event.getItem().getType() == Material.FLINT_AND_STEEL ||
+							event.getItem().getType() == Material.MINECART ||
+							event.getItem().getType() == Material.POWERED_MINECART ||
+							event.getItem().getType() == Material.REDSTONE ||
+							event.getItem().getType() == Material.REDSTONE_TORCH_ON ||
+							event.getItem().getType() == Material.REDSTONE_TORCH_OFF ||
+							event.getItem().getType() == Material.REDSTONE_WIRE ||
+							event.getItem().getType() == Material.STORAGE_MINECART ||
+					event.getItem().getType() == Material.INK_SACK
+					))
+			{
+				if (!canInteract(event.getPlayer(), event.getClickedBlock()))
+				{
+					event.setCancelled(true);
+					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You may not place that in this protected area.");
+				}
+			}
+			else if (event.getClickedBlock().getType() == Material.TNT)
+			{
+				AutoBase base = getBase(event.getClickedBlock());
+				
+				if (base == null)
+				{
+					if (SuperManager.isSuper(event.getPlayer())) { return; }
+					
+					event.setCancelled(true);
+					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot activate TNT in the wilderness.");
+				}
+				else if (!isOwner(event.getPlayer(), base))
+				{
+					event.setCancelled(true);
+					event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "Knock it off.");
+				}
+			}
+			
+			if (!event.isCancelled() && event.hasItem())
+			{
+				AutoBase base = getBase(event.getClickedBlock());
+				ItemStack item = event.getItem();
+				Player player = event.getPlayer();
+				
+				if (item.getType() == Material.INK_SACK && item.getData().getData() == 15)
+				{
+					if (base == null && !SuperManager.isSuper(event.getPlayer()))
+					{
+						player.sendMessage(NaxColor.MSG + "You cannot use bonemeal outside areas you own.");
+						event.setCancelled(true);
+					}
+				}
+				else if (item.getType() == Material.MONSTER_EGG)
+				{
+					if (!SuperManager.isSuper(player))
+					{
+						boolean cancelled = base == null || !base.isOwner(player) || item.getDurability() < 90 || item.getDurability() > 97; // 90 is pig, 97 is snow golem
+						event.setCancelled(cancelled);
+						
+						if (cancelled)
+						{
+							player.sendMessage(NaxColor.MSG + "You cannot spawn monsters in areas you don't own. Also, you may only spawn animals, not enemies.");
+						}
+					}
+				}
+			}
+		}
+		
+		if (event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_BLOCK)
+		{
+			if (event.getClickedBlock().getType() == Material.TRAP_DOOR)
+			{
+				Player player = (Player) event.getPlayer();
+				AutoBase base = getBase(event.getClickedBlock());
+				
+				if (base == null) { return; }
+				
+				if (!isOwner(player, base))
+				{
+					if (base.hasFlag(Flag.TRAPDOORS))
+					{
+						event.setCancelled(true);
+						player.sendMessage(Naxcraft.MSG_COLOR + "You may not interact with players' locked trapdoors.");
+						plugin.playerManager.handleKick(player, "trapdoors");
+					}
+				}
+			}
+		}
+	}
+	
+	public boolean ownsBases(Player player)
+	{
+		for (AutoBase base : bases)
+		{
+			if (isOwner(player, base)) { return true; }
+		}
+		return false;
+	}
+	
+	/**
+	 * Gets number of owned bases by a player.
+	 * 
+	 * @param player
+	 * @return An array of [Founded Bases, Builder Rank Bases]
+	 */
+	public int[] getNumberOwnedBases(String player)
+	{
+		int superOwned = 0;
+		int owned = 0;
+		
+		for (AutoBase base : bases)
+		{
+			if (isSuperOwner(player, base)) superOwned++;
+			else if (isOwner(player, base)) owned++;
+		}
+		return new int[] { superOwned, owned };
+	}
+	
+	public boolean canInteract(Player player, Block block)
+	{
+		if (SuperManager.isSuper(player)) return true;
+		
+		AutoBase base = null;
+		
+		if (getPoint(player) == getPoint(block))
+		{
+			base = cacheBase.get(player);
+		}
+		else
+		{
+			base = getBase(block);
+		}
+		
+		if (base == null) { return true; }
+		
+		if (isOwner(player, base))
 		{
 			return true;
 		}
 		else
 		{
-			if(block.getType() == Material.DISPENSER)
+			if (block.getType() == Material.DISPENSER)
 			{
 				CraftDispenser d = new CraftDispenser(block);
 				
-				if
-				(
-				   d.getInventory().contains(Material.GOLD_ORE) || d.getInventory().contains(Material.GOLD_INGOT) ||
-				   d.getInventory().contains(Material.DIAMOND_ORE) || d.getInventory().contains(Material.DIAMOND) ||
-				   d.getInventory().contains(Material.IRON_ORE) || d.getInventory().contains(Material.IRON_INGOT)
-				)
-				{	
+				if (d.getInventory().contains(Material.GOLD_ORE) || d.getInventory().contains(Material.GOLD_INGOT) ||
+						d.getInventory().contains(Material.DIAMOND_ORE) || d.getInventory().contains(Material.DIAMOND) ||
+						d.getInventory().contains(Material.IRON_ORE) || d.getInventory().contains(Material.IRON_INGOT))
+				{
 					return true;
-				} 
-				else 
+				}
+				else
 				{
 					return false;
 				}
@@ -604,11 +952,11 @@ public class AutoAreaManager
 		}
 	}
 	
-	public void buyFlag(Player player, String[] args) 
-	{	
-		String flag = args[2];
+	public void buyFlag(Player player, String[] args)
+	{
+		Flag flag = Flag.parseFlag(args[2].toLowerCase());
 		
-		if(getFlagInfo(flag) == null)
+		if (flag == null)
 		{
 			player.sendMessage(Naxcraft.MSG_COLOR + "The flag " + Naxcraft.ERROR_COLOR + args[2] + Naxcraft.MSG_COLOR + " does not exist.");
 			return;
@@ -616,101 +964,102 @@ public class AutoAreaManager
 		
 		AutoBase base = getBase(player);
 		
-		if(base == null)
+		if (base == null)
 		{
 			player.sendMessage(Naxcraft.MSG_COLOR + "You must be inside of your area before you purchase a flag.");
 			return;
 		}
 		
-		if(base.getFlag(flag) && !plugin.superCommand.isSuper(player.getName()))
+		if (base.hasFlag(flag) && !SuperManager.isSuper(player))
 		{
 			player.sendMessage(Naxcraft.MSG_COLOR + "You have already purchased that flag for this area.");
 			return;
 		}
 		
-		if(getFlagInfo(flag).adminOnly)
+		NaxPlayer p = plugin.playerManager.getPlayer(player);
+		
+		if (p.rank.getId() < flag.minimumRankId)
 		{
-			if(!plugin.superCommand.isSuper(player.getName()))
+			if (!SuperManager.isSuper(player))
 			{
-				player.sendMessage(Naxcraft.MSG_COLOR + "You cannot buy this admin flag without being super.");
-				return;
-			}
-			else
-			{
-				String s = base.toggleFlag(flag) ? "on" : "off";
-				player.sendMessage(Naxcraft.MSG_COLOR + "Flag " + Naxcraft.SUCCESS_COLOR + flag + Naxcraft.MSG_COLOR + " is now " + s + "!");
+				player.sendMessage(Naxcraft.MSG_COLOR + "You are not high enough ranked for that flag.");
+				
+				if (p.rank == PlayerRank.NOOB)
+				{
+					player.sendMessage(NaxColor.MSG + "Try using the /join command when you have 16 iron ingots to unlock more flags.");
+				}
+				else if (p.rank == PlayerRank.MEMBER)
+				{
+					player.sendMessage(NaxColor.MSG + "Try using the /promote command when you have 32 gold ingots to unlock more flags.");
+				}
+				else
+				{
+					player.sendMessage(NaxColor.MSG + "That flag is for admins only.");
+				}
+				
 				return;
 			}
 		}
+		else if (SuperManager.isSuper(player))
+		{
+			String s = base.toggleFlag(flag) ? "on" : "off";
+			player.sendMessage(Naxcraft.MSG_COLOR + "Flag " + Naxcraft.SUCCESS_COLOR + flag + Naxcraft.MSG_COLOR + " is now " + s + "!");
+			return;
+		}
 		
-		if(getFlagInfo(flag).required != null && !plugin.superCommand.isSuper(player.getName()))
-		{			
+		if (flag.required != null && !SuperManager.isSuper(player))
+		{
 			boolean okay = false;
 			
-			for(String flug : getFlagInfo(flag).required.split(","))
+			for (Flag r : flag.required)
 			{
-				if(base.getFlag(flug))
+				if (base.hasFlag(r))
 				{
 					okay = true;
 				}
 			}
 			
-			if(!okay)
+			if (!okay)
 			{
-				//THAT'S NOT OKAY.
-				player.sendMessage(Naxcraft.MSG_COLOR + "That flag requires other flags to be bought already. Check " + Naxcraft.DEFAULT_COLOR + "/flags " + flag + Naxcraft.MSG_COLOR +".");
+				// THAT'S NOT OKAY.
+				player.sendMessage(Naxcraft.MSG_COLOR + "That flag requires other flags to be bought already. Check " + Naxcraft.DEFAULT_COLOR + "/flags " + flag + Naxcraft.MSG_COLOR + ".");
 				return;
 			}
 		}
 		
-		if(plugin.superCommand.isSuper(player.getName()) || charge(player, Material.GOLD_INGOT, getFlagInfo(flag).cost))
+		if (SuperManager.isSuper(player) || charge(player, Material.GOLD_INGOT, flag.cost))
 		{
 			String s = base.toggleFlag(flag) ? "on" : "off";
 			player.sendMessage(Naxcraft.MSG_COLOR + "Flag " + Naxcraft.SUCCESS_COLOR + flag + Naxcraft.MSG_COLOR + " is now " + s + "!");
 		}
 		else
 		{
-			player.sendMessage(Naxcraft.MSG_COLOR + "You don't have the " + Naxcraft.ERROR_COLOR + getFlagInfo(flag).cost + " " + Material.GOLD_INGOT.toString().toLowerCase().replace("_", " ") + Naxcraft.MSG_COLOR + " required for that flag.");
-		}
-			
-	}
-	
-	public FlagInfo getFlagInfo(String name)
-	{
-		FlagInfo flag = null;
-		
-		for(FlagInfo flug : flags)
-		{
-			if(flug.name.equalsIgnoreCase(name))
-			{
-				return flug;
-			}
+			player.sendMessage(Naxcraft.MSG_COLOR + "You don't have the " + Naxcraft.ERROR_COLOR + flag.cost + " " + Material.GOLD_INGOT.toString().toLowerCase().replace("_", " ") + Naxcraft.MSG_COLOR + " required for that flag.");
 		}
 		
-		return flag;
 	}
 	
 	public boolean charge(Player player, Material material, int cost)
-	{		
+	{
 		int priceleft = cost;
 		List<Integer> slotsToDestroy = new ArrayList<Integer>();
 		
 		boolean enoughMoney = false;
 		
-		for(int slot : player.getInventory().all(material).keySet())
+		for (int slot : player.getInventory().all(material).keySet())
 		{
 			priceleft -= player.getInventory().getItem(slot).getAmount();
-			if(priceleft > 0) 
+			if (priceleft > 0)
 			{
 				slotsToDestroy.add(slot);
-			} 
-			else if(priceleft == 0) 
+			}
+			else if (priceleft == 0)
 			{
 				slotsToDestroy.add(slot);
 				enoughMoney = true;
 				break;
-			} 
-			else if(priceleft < 0) 
+			}
+			else if (priceleft < 0)
 			{
 				slotsToDestroy.add(slot);
 				enoughMoney = true;
@@ -718,13 +1067,16 @@ public class AutoAreaManager
 			}
 		}
 		
-		if(enoughMoney){
-			for(int slot : slotsToDestroy){
+		if (enoughMoney)
+		{
+			for (int slot : slotsToDestroy)
+			{
 				player.getInventory().setItem(slot, null);
 			}
-			if(priceleft < 0){
-				player.getInventory().addItem(new ItemStack(material, priceleft*-1));
-			}		
+			if (priceleft < 0)
+			{
+				player.getInventory().addItem(new ItemStack(material, priceleft * -1));
+			}
 		}
 		
 		return enoughMoney;
@@ -732,25 +1084,25 @@ public class AutoAreaManager
 	
 	public void showBorders(Player player)
 	{
-		for(AutoBase base : bases)
+		for (AutoBase base : bases)
 		{
-			if(base.playerClose(player))
+			if (base.playerClose(player))
 			{
 				plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new BorderShower(player, base), 2);
 			}
 		}
 		
-		player.sendMessage(ChatColor.GOLD + "Gold" + Naxcraft.MSG_COLOR + ": Your founded areas. " + ChatColor.BLUE + "Blue" + Naxcraft.MSG_COLOR + 
-						   ": Areas you may build in. " + ChatColor.RED + "Red" + Naxcraft.MSG_COLOR + ": Areas you may not build in. " +
-						   ChatColor.GREEN + "Green" + Naxcraft.MSG_COLOR + ": The current chunk you are in. Remove borders with " + Naxcraft.DEFAULT_COLOR + 
-						   "/property noborders" + Naxcraft.MSG_COLOR + " or relogging.");
+		player.sendMessage(ChatColor.GOLD + "Gold" + Naxcraft.MSG_COLOR + ": Your founded areas. " + ChatColor.BLUE + "Blue" + Naxcraft.MSG_COLOR +
+							": Areas you may build in. " + ChatColor.RED + "Red" + Naxcraft.MSG_COLOR + ": Areas you may not build in. " +
+							ChatColor.GREEN + "Green" + Naxcraft.MSG_COLOR + ": The current chunk you are in. Remove borders with " + Naxcraft.DEFAULT_COLOR +
+							"/property noborders" + Naxcraft.MSG_COLOR + " or relogging.");
 	}
 	
 	public void hideBorders(Player player)
 	{
-		for(AutoBase base : bases)
+		for (AutoBase base : bases)
 		{
-			if(base.playerClose(player))
+			if (base.playerClose(player))
 			{
 				plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new BorderHider(player, base), 2);
 			}
@@ -769,6 +1121,11 @@ public class AutoAreaManager
 	
 	public AutoBase getNearestBaseWithin(Player player, int distance)
 	{
+		return getNearestBaseWithin(player, distance, true);
+	}
+	
+	public AutoBase getNearestBaseWithin(Player player, int distance, boolean includeOwnedBases)
+	{
 		AutoBase base = null;
 		
 		int x = player.getLocation().getBlock().getChunk().getX();
@@ -776,16 +1133,25 @@ public class AutoAreaManager
 		
 		int distanceToBeat = distance + 5;
 		
-		for(AutoBase b : bases)
+		for (AutoBase b : bases)
 		{
-			for(Point chunk : b.chunks)
+			if (b.world != player.getWorld())
 			{
-				if(Math.abs(chunk.x - x) > distance) continue;
-				if(Math.abs(chunk.y - z) > distance) continue;
+				continue;
+			}
+			else if (includeOwnedBases && isOwner(player, b))
+			{
+				continue;
+			}
+			
+			for (Point chunk : b.chunks)
+			{
+				if (Math.abs(chunk.x - x) > distance) continue;
+				if (Math.abs(chunk.y - z) > distance) continue;
 				
-				int d = (int)Math.floor(Math.sqrt(Math.pow(chunk.x - x, 2) + Math.pow(chunk.y - z, 2)));
+				int d = (int) Math.floor(Math.sqrt(Math.pow(chunk.x - x, 2) + Math.pow(chunk.y - z, 2)));
 				
-				if(d < distanceToBeat)
+				if (d < distanceToBeat)
 				{
 					base = b;
 					distanceToBeat = d;
@@ -801,6 +1167,11 @@ public class AutoAreaManager
 		return getBase(player.getLocation().getBlock());
 	}
 	
+	public AutoBase getBase(Location location)
+	{
+		return getBase(location.getBlock());
+	}
+	
 	public AutoBase getBase(Block block)
 	{
 		return getBase(block.getChunk());
@@ -808,14 +1179,23 @@ public class AutoAreaManager
 	
 	public AutoBase getBase(Chunk chunk)
 	{
-		for(AutoBase base : bases)
+		if (chunk == null)
 		{
-			if(base.world.getName() != chunk.getWorld().getName()) continue;
+			System.out.println("Within null chunk - what the fuck");
+			return null;
+		}
+		
+		for (AutoBase base : bases)
+		{
+			if (base == null) continue;
+			if (base.world == null) continue;
 			
-			for(Point p : base.chunks)
+			if (base.world.getName() != chunk.getWorld().getName()) continue;
+			
+			for (Point p : base.chunks)
 			{
-				if(p.getX() != chunk.getX()) continue;
-				if(p.getY() != chunk.getZ()) continue;
+				if (p.getX() != chunk.getX()) continue;
+				if (p.getY() != chunk.getZ()) continue;
 				
 				return base;
 			}
@@ -824,132 +1204,113 @@ public class AutoAreaManager
 		return null;
 	}
 	
-	public boolean checkSurroundingChunks(Player player) 
+	public boolean checkSurroundingChunks(Player player)
 	{
-		Chunk c1 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX()+1, player.getLocation().getBlock().getChunk().getZ());
-		Chunk c2 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX(), player.getLocation().getBlock().getChunk().getZ()+1);
-		Chunk c3 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX()-1, player.getLocation().getBlock().getChunk().getZ());
-		Chunk c4 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX(), player.getLocation().getBlock().getChunk().getZ()-1);
+		Chunk c1 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX() + 1, player.getLocation().getBlock().getChunk().getZ());
+		Chunk c2 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX(), player.getLocation().getBlock().getChunk().getZ() + 1);
+		Chunk c3 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX() - 1, player.getLocation().getBlock().getChunk().getZ());
+		Chunk c4 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX(), player.getLocation().getBlock().getChunk().getZ() - 1);
 		
 		AutoBase base = getBase(c1);
-		if(base != null) return true;
+		if (base != null) return true;
 		
 		base = getBase(c2);
-		if(base != null) return true;
+		if (base != null) return true;
 		
 		base = getBase(c3);
-		if(base != null) return true;
+		if (base != null) return true;
 		
 		base = getBase(c4);
-		if(base != null) return true;
+		if (base != null) return true;
 		
 		return false;
 	}
 	
-	public AutoBase getTouchingBase(Player player) 
+	public AutoBase getTouchingBase(Player player)
 	{
-		Chunk c1 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX()+1, player.getLocation().getBlock().getChunk().getZ());
-		Chunk c2 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX(), player.getLocation().getBlock().getChunk().getZ()+1);
-		Chunk c3 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX()-1, player.getLocation().getBlock().getChunk().getZ());
-		Chunk c4 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX(), player.getLocation().getBlock().getChunk().getZ()-1);
+		Chunk c1 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX() + 1, player.getLocation().getBlock().getChunk().getZ());
+		Chunk c2 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX(), player.getLocation().getBlock().getChunk().getZ() + 1);
+		Chunk c3 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX() - 1, player.getLocation().getBlock().getChunk().getZ());
+		Chunk c4 = player.getWorld().getChunkAt(player.getLocation().getBlock().getChunk().getX(), player.getLocation().getBlock().getChunk().getZ() - 1);
 		
 		AutoBase base = getBase(c1);
-		if(base != null) return base;
+		if (base != null) return base;
 		
 		base = getBase(c2);
-		if(base != null) return base;
+		if (base != null) return base;
 		
 		base = getBase(c3);
-		if(base != null) return base;
+		if (base != null) return base;
 		
 		base = getBase(c4);
-		if(base != null) return base;
+		if (base != null) return base;
 		
 		return null;
 	}
-
-	public boolean newBase(Player player) 
-	{		
+	
+	public boolean newBase(Player player)
+	{
 		int x = player.getLocation().getBlock().getChunk().getX();
 		int z = player.getLocation().getBlock().getChunk().getZ();
 		
 		int distanceToBeat = SAME_OWNER_BUFFER + 5;
 		
-		for(AutoBase b : bases)
+		for (AutoBase b : bases)
 		{
-			if(!isOwner(player, b)) continue;
+			if (!isOwner(player, b)) continue;
+			if (b.world != player.getWorld()) continue;
 			
-			for(Point chunk : b.chunks)
+			for (Point chunk : b.chunks)
 			{
-				if(Math.abs(chunk.x - x) > SAME_OWNER_BUFFER) continue;
-				if(Math.abs(chunk.y - z) > SAME_OWNER_BUFFER) continue;
+				if (Math.abs(chunk.x - x) > SAME_OWNER_BUFFER) continue;
+				if (Math.abs(chunk.y - z) > SAME_OWNER_BUFFER) continue;
 				
-				int d = (int)Math.floor(Math.sqrt(Math.pow(chunk.x - x, 2) + Math.pow(chunk.y - z, 2)));
+				int d = (int) Math.floor(Math.sqrt(Math.pow(chunk.x - x, 2) + Math.pow(chunk.y - z, 2)));
 				
-				if(d < distanceToBeat)
+				if (d < distanceToBeat)
 				{
-					return false;
+					if (!SuperManager.isSuper(player)) { return false; }
 				}
 			}
 		}
 		return true;
 	}
 	
+	public boolean isSuperOwner(String player, AutoBase base)
+	{
+		return player.equalsIgnoreCase(base.owner);
+	}
+	
 	public boolean isSuperOwner(Player player, AutoBase base)
-	{		
-		if(base.owner.startsWith("clan:"))
+	{
+		return player.getName().equalsIgnoreCase(base.owner);
+	}
+	
+	public boolean isOwner(String player, AutoBase base)
+	{
+		if (base.hasFlag(Flag.PUBLIC)) return true;
+		if (SuperManager.isSuper(player)) return true;
+		
+		if (base.owner.equalsIgnoreCase(player)) { return true; }
+		
+		for (String otherOwner : base.otherOwners)
 		{
-			NaxcraftClan clan = plugin.clanCommand.getPlayerClan(player);
-			
-			if(clan == null) return false;
-			
-			return clan.name.equalsIgnoreCase(base.owner.replace("clan:", ""));
+			if (otherOwner.equalsIgnoreCase(player)) { return true; }
 		}
-		else
-		{
-			return player.getName().equalsIgnoreCase(base.owner);
-		}
+		
+		return false;
 	}
 	
 	public boolean isOwner(Player player, AutoBase base)
 	{
-		if(base.getFlag("public")) return true;
-		if(plugin.superCommand.isSuper(player.getName())) return true;
+		if (base.hasFlag(Flag.PUBLIC)) return true;
+		if (SuperManager.isSuper(player)) return true;
 		
-		if(base.owner.equalsIgnoreCase(player.getName()))
-		{
-			return true;
-		}
-		else if (base.owner.contains("clan:"))
-		{
-			NaxcraftClan clan = plugin.clanCommand.getPlayerClan(player);
-			
-			if(clan != null)
-			{
-				if(clan.name.equalsIgnoreCase(base.owner.replace("clan:", "")))
-				{
-					return true;
-				}
-			}
-		}
+		if (base.owner.equalsIgnoreCase(player.getName())) { return true; }
 		
-		for(String otherOwner : base.otherOwners)
+		for (String otherOwner : base.otherOwners)
 		{
-			if(otherOwner.equalsIgnoreCase(player.getName()))
-			{
-				return true;
-			}
-			else if (otherOwner.contains("clan:"))
-			{
-				NaxcraftClan clan = plugin.clanCommand.getPlayerClan(player);
-				
-				if(clan == null) continue;
-				
-				if(clan.name.equalsIgnoreCase(otherOwner.replace("clan:", "")))
-				{
-					return true;
-				}
-			}
+			if (otherOwner.equalsIgnoreCase(player.getName())) { return true; }
 		}
 		
 		return false;
@@ -959,7 +1320,7 @@ public class AutoAreaManager
 	{
 		builder = builder.toLowerCase();
 		
-		if(base.otherOwners.contains(builder))
+		if (base.otherOwners.contains(builder))
 		{
 			return false;
 		}
@@ -975,7 +1336,7 @@ public class AutoAreaManager
 	{
 		builder = builder.toLowerCase();
 		
-		if(!base.otherOwners.contains(builder))
+		if (!base.otherOwners.contains(builder))
 		{
 			return false;
 		}
@@ -989,13 +1350,11 @@ public class AutoAreaManager
 	
 	public void count(Player player, Block block)
 	{
-		if(ownsBases(player))
-			return;
+		if (ownsBases(player)) return;
 		
-		if(player.getWorld().getName().startsWith("old_naxville"))
-			return;
+		if (player.getWorld().getName().startsWith("old_naxville")) return;
 		
-		if(!counters.containsKey(player))
+		if (!counters.containsKey(player))
 		{
 			counters.put(player, new AutoCounter(player));
 		}
@@ -1005,7 +1364,7 @@ public class AutoAreaManager
 		counter.count(block);
 	}
 	
-	public AutoBase createNewBase(Player player) 
+	public AutoBase createNewBase(Player player)
 	{
 		AutoBase base = new AutoBase(this, getNewId(player.getName()), player.getName(), player.getWorld());
 		
@@ -1015,9 +1374,9 @@ public class AutoAreaManager
 	
 	public String getNewId(String owner)
 	{
-		for(int i = 0; i < 1000; i++)
+		for (int i = 0; i < 1000; i++)
 		{
-			if(!ids.contains(owner + "_" + i))
+			if (!ids.contains(owner + "_" + i))
 			{
 				ids.add(owner + "_" + i);
 				return owner + "_" + i;
@@ -1029,38 +1388,7 @@ public class AutoAreaManager
 	
 	public void loadFile()
 	{
-		File file = new File(plugin.filePath + FILE_NAME + ".yml");
-		try
-		{
-			if(!file.exists())
-			{
-				file.createNewFile();
-				initializeFile(file);
-			}
-		}
-		catch(IOException e)
-		{
-			System.out.println("Error loading AutoArea file.");
-			e.printStackTrace();
-		}
-		
-		config = new NaxcraftConfiguration(file);
-		config.load();
-	}
-	
-	public void initializeFile(File file)
-	{
-		try
-		{
-			BufferedWriter output = new BufferedWriter(new FileWriter(file));
-			output.write("autobases: {}");
-			output.close();
-		}
-		catch(IOException e)
-		{
-			System.out.println("Error initializing AutoArea file.");
-			e.printStackTrace();
-		}
+		config = new NaxFile(plugin, "autobases");
 	}
 	
 	public void loadAutoAreas()
@@ -1069,46 +1397,57 @@ public class AutoAreaManager
 		
 		try
 		{
-			List<String> keys = config.getKeys("autobases");
+			Set<String> keys = config.getKeys("autobases");
 			
-			for(String key : keys)
+			for (String key : keys)
 			{
 				String prefix = "autobases." + key;
 				
 				String owner = config.getString(prefix + ".owner");
-				World world = plugin.getServer().getWorld(config.getString(prefix + ".world"));
 				
-				List<String> flagKeys = config.getKeys(prefix + ".flags");
-				Map<String, Boolean> flags = new HashMap<String, Boolean>();
-				
-				for(String flagKey : flagKeys)
+				if (!config.contains(prefix + ".world") || config.getString(prefix + ".world") == null)
 				{
-					flags.put(flagKey, Boolean.parseBoolean(config.getString(prefix + ".flags." + flagKey)));
+					continue;
 				}
 				
-				List<String> chunkList = config.getKeys(prefix + ".chunks");
+				World world = plugin.getServer().getWorld(config.getString(prefix + ".world"));
+				
+				if (world == null) continue;
+				
+				Set<String> flagKeys = config.getKeys(prefix + ".flags");
+				Map<Flag, Boolean> flags = new HashMap<Flag, Boolean>();
+				
+				for (String flagKey : flagKeys)
+				{
+					Flag f = Flag.parseFlag(flagKey);
+					if (f == null) continue;
+					
+					flags.put(f, Boolean.parseBoolean(config.getString(prefix + ".flags." + flagKey)));
+				}
+				
+				Set<String> chunkList = config.getKeys(prefix + ".chunks");
 				List<Point> chunks = new ArrayList<Point>();
 				
-				if(chunkList == null)
+				if (chunkList == null)
 				{
 					config.removeProperty(prefix);
 					config.save();
 					continue;
 				}
 				
-				for(String chunk : chunkList)
+				for (String chunk : chunkList)
 				{
-					chunks.add(new Point(Integer.parseInt(config.getString(prefix + ".chunks." + chunk + ".x")), Integer.parseInt(config.getString(prefix + ".chunks." + chunk + ".z"))));
+					chunks.add(new Point(config.getInt(prefix + ".chunks." + chunk + ".x"), config.getInt(prefix + ".chunks." + chunk + ".z")));
 				}
 				
-				List<String> otherOwners = config.getStringList(prefix + ".otherOwners", null);
+				List<String> otherOwners = config.getStringList(prefix + ".otherOwners");
 				
 				AutoBase base = new AutoBase(this, key, owner, otherOwners, world, chunks, flags);
 				bases.add(base);
 				ids.add(key);
 			}
 		}
-		catch(Exception e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
@@ -1118,91 +1457,140 @@ public class AutoAreaManager
 	{
 		String prefix = "autobases." + base.id;
 		
-		config.setProperty(prefix + ".owner", base.owner);
-		config.setProperty(prefix + ".world", base.world.getName());
+		config.set(prefix + ".owner", base.owner);
+		config.set(prefix + ".world", base.world.getName());
 		
-		for(String flag : base.flags.keySet())
+		config.set(prefix + ".flags", "");
+		
+		for (Flag flag : base.flags.keySet())
 		{
-			config.setProperty(prefix + ".flags." + flag, base.flags.get(flag).toString());
+			config.set(prefix + ".flags." + flag, base.flags.get(flag).toString());
 		}
 		
-		config.setProperty(prefix + ".otherOwners", base.otherOwners);
+		config.set(prefix + ".otherOwners", base.otherOwners);
+		config.set(prefix + ".chunks", "");
 		
 		int i = 0;
-		for(Point chunk : base.chunks)
+		for (Point chunk : base.chunks)
 		{
-			config.setProperty(prefix + ".chunks." + i + ".x", chunk.x);
-			config.setProperty(prefix + ".chunks." + i + ".z", chunk.y);
+			config.set(prefix + ".chunks." + i + ".x", chunk.x);
+			config.set(prefix + ".chunks." + i + ".z", chunk.y);
 			i++;
 		}
 		
 		config.save();
 	}
 	
+	public void removeChunk(AutoBase base, Player player)
+	{
+		Point point = getPoint(player);
+		if (base.chunks.contains(point))
+		{
+			base.chunks.remove(point);
+		}
+		
+		saveBase(base);
+	}
+	
 	public void removeBase(AutoBase base)
 	{
-		refreshOwners(base);
+		bases.remove(base);
 		config.removeProperty("autobases." + base.id);
 		config.save();
+		
+		refreshOwners(base);
 	}
-
-	public void addRemoveBuilder(Player player, String[] args) 
+	
+	public void addRemoveBuilder(Player player, String[] args)
 	{
 		AutoBase base = getBase(player);
 		
-		if(base == null || !isOwner(player, base))
+		if (base == null || !isOwner(player, base))
 		{
 			player.sendMessage(Naxcraft.MSG_COLOR + "You are not within an area you own!");
 			return;
 		}
 		
-		if(!isSuperOwner(player, base))
+		if (!isSuperOwner(player, base))
 		{
 			player.sendMessage(Naxcraft.MSG_COLOR + "You are not the founder of this area!");
 			return;
 		}
 		
-		if(charge(player, Material.GOLD_INGOT, 16))
+		if (base.hasFlag(Flag.NO_ADD))
 		{
-			if(args[0].equalsIgnoreCase("add"))
+			if (!SuperManager.isSuper(player))
 			{
-				if(addBuilder(args[2].replace("<", "").replace(">", ""), base))
-				{
-					player.sendMessage(Naxcraft.MSG_COLOR + args[2] + Naxcraft.MSG_COLOR + " has been added to the area!");
-					
-					refreshOwners(base);
-				}
-				else
-				{
-					player.sendMessage(Naxcraft.MSG_COLOR + args[2] + " was already added to this area!");
-				}
+				player.sendMessage(NaxColor.ERR + "This area is locked from receiving new or removing any builders.");
+				return;
 			}
-			else if (args[0].equalsIgnoreCase("remove"))
-			{
-				if(removeBuilder(args[2], base))
-				{
-					player.sendMessage(Naxcraft.MSG_COLOR + args[2] + Naxcraft.MSG_COLOR + " has been removed from the area!");
-					refreshOwners(base);
-				}
-				else
-				{
-					player.sendMessage(Naxcraft.MSG_COLOR + args[2] + " isn't a part of this area to begin with!");
-				}
-			}
+		}
+		
+		String s = args[2].replace("<", "").replace(">", "");
+		String clean = "";
+		
+		NaxPlayer p = plugin.playerManager.getPlayer(s);
+		
+		if (p == null)
+		{
+			player.sendMessage(Naxcraft.MSG_COLOR + "There is no player by the name '" + s + "' at all.");
+			
+			return;
 		}
 		else
 		{
-			player.sendMessage(Naxcraft.MSG_COLOR + "It costs 16 gold ingots in order to add/remove a builder.");
+			s = p.displayName;
+			clean = p.name;
 		}
+		
+		if (args[0].equalsIgnoreCase("add"))
+		{
+			if (SuperManager.isSuper(player) || charge(player, Material.GOLD_INGOT, 16))
+			{
+				if (addBuilder(clean, base))
+				{
+					player.sendMessage(clean + " has been added to the area!");
+					refreshOwners(base);
+				}
+				else
+				{
+					player.sendMessage(clean + " was already added to this area!");
+				}
+			}
+			else
+			{
+				player.sendMessage(Naxcraft.MSG_COLOR + "It costs 16 gold ingots in order to add/remove a builder.");
+			}
+		}
+		else if (args[0].equalsIgnoreCase("remove"))
+		{
+			if (SuperManager.isSuper(player) || charge(player, Material.GOLD_INGOT, 16))
+			{
+				if (removeBuilder(clean, base))
+				{
+					player.sendMessage(Naxcraft.MSG_COLOR + clean + Naxcraft.MSG_COLOR + " has been removed from the area!");
+					refreshOwners(base);
+				}
+				else
+				{
+					player.sendMessage(Naxcraft.MSG_COLOR + clean + " isn't a part of this area to begin with!");
+				}
+			}
+			else
+			{
+				player.sendMessage(Naxcraft.MSG_COLOR + "It costs 16 gold ingots in order to add/remove a builder.");
+			}
+		}
+		
 	}
 	
 	public void refreshOwners(AutoBase base)
 	{
-		for(String s : base.getOwners())
+		for (String s : base.getOwners())
 		{
-			for(Player p : plugin.getServer().getOnlinePlayers())
+			for (Player p : plugin.getServer().getOnlinePlayers())
 			{
-				if(p.getName().equalsIgnoreCase(s))
+				if (p.getName().equalsIgnoreCase(s))
 				{
 					refreshCache(p);
 				}
@@ -1218,13 +1606,3 @@ public class AutoAreaManager
 		NONE
 	}
 }
-
-
-
-
-
-
-
-
-
-

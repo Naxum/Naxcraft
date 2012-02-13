@@ -1,23 +1,66 @@
 name: Naxcraft
 main: com.naxville.naxcraft.Naxcraft
-version: 1.2
+version: 1.0
 website: http://www.naxville.com/dev.php
 author: Naxum
 
 commands:
+  city:
+    description: Allows for teleportation to city hubs.
+    usage: |
+           /<command>
+           
+  titles:
+    description: Displays info on titles.
+    usage: |
+           /<command>
+           
+  fire:
+    description: Turns off fire trail until restart.
+    usage: |
+           /<command>
+
+  level:
+    description: Allows you to buy skills.
+    usage: |
+           /<command>
+           
+  save-all:
+    description: Save the server!
+    usage: |
+           /<command>
+
+  setspawn:
+    description: Sets the spawnpoint of the world.
+    usage: |
+           /<command>
+
+  chat:
+    description: Lists chat channels.
+    usage: |
+           /<command>
+           
   spawn:
     description: Teleports you to the world spawnpoint.
     usage: |
            /<command>
+           
+  stats:
+    description: Shows the server stats.
+    usage: |
+           /<command>
+         
+  party:
+    description: Does party things. For help use /party help
+    usage: |
+           /<command> help
+           
   home:
     description: Teleports you to your home, if not set, the /spawn.
     usage: |
            /<command>
-           
-  sethome:
-    description: Sets your /home point, if you own the area.
-    usage: |
-           /<command>
+           /<command> <name>
+           /<command> <add/remove> <name>
           
   who:
     description: Shows online players.
@@ -32,9 +75,10 @@ commands:
     aliases: '?'
            
   property:
-    description: Toggles boundaries of areas you own.
+    description: Shows property related commands.
     usage: |
            /<command>
+    aliases: pr
            
   ranks:
     description: Lists all ranks and their prefixes.
@@ -50,6 +94,17 @@ commands:
     description: Shows all colors and changes player's name color.
     usage: |
            /<command> <color>
+           
+  enchant:
+    description: Cheats!
+    usage: |
+           /<command>
+           
+  duplicate:
+    description: Duplicates an item.
+    usage: |
+           /<command> [#]
+           
   join:
     description: Promotes you to member for 16 iron.
     usage: |
@@ -95,18 +150,34 @@ commands:
     usage: |
            /<command> <creature> [amount < 16]
     
-  areainfo:
-    description: Use to get info about the Old Naxville area you're in.
+  hat:
+    description: Haha woo.
     usage: |
            /<command>
+           
+  feed:
+    description: nom nom
+    usage:
+         |
+         /<command> [name]
     
   transcend:
     description: Let's leave this world, baby.
     usage: |
            /<command>
            
+  creative:
+    description: Allows creative mode in flagged areas.
+    usage: |
+           /<command>
+           
   strike:
-    description: BOOM
+    description: ZAP
+    usage: |
+           /<command> [player]
+           
+  boom:
+    description: BAM
     usage: |
            /<command> [player]
            
@@ -131,6 +202,11 @@ commands:
     usage: |
            /<command>
            
+  title:
+    description: Title command.
+    usage: |
+           /<command>
+           
   super:
     description: Makes you super, you ignore area rules.
     usage: |
@@ -145,8 +221,14 @@ commands:
   time:
     description: Sets the time of day.
     usage: |
-           /<command> <day/night>
+           /<command> <day/night/bloodmoon>
 
+  back:
+    description: Brings you back to pre-teleport location.
+    usage: |
+           /<command>
+           /<command> [target]
+           
   tp:
     description: Teleports a player or all players somewhere else.
     usage: |
@@ -187,7 +269,12 @@ commands:
     description: Gives the moderator kit.
     usage: |
            /<command>
-
+           
+  kick:
+    description: Kicks a player.
+    usage: |
+           /<command> <name> [reason for kick (optional)].
+           
   drop:
     description: Toggles removal of players inv. on death.
     usage: |
@@ -200,11 +287,6 @@ commands:
     usage: |
            /<command> <player> [player2...]
 
-  clan:
-    description: Commands for controling clans and clan membership.
-    usage: |
-           /<command> help - Shows all clan help info
-
   g:
     description: Sends chat in the global channel.
     usage: |
@@ -212,19 +294,18 @@ commands:
            Example /g - Sets chat channel to global
            Example /g Hi - Says "Hi" in the global channel
 
-  l:
-    description: Sends chat in the local channel.
+  local:
+    description: Sends chat in the local (nearby) channel.
     usage: |
            /<command> [message]
            Example /l - Sets chat channel to local
            Example /l Hi - Says "Hi" in the local channel
+    aliases: l
 
-  c:
-    description: Sends chat in the clan channel.
+  p:
+    description: Sends chat in the party channel.
     usage: |
            /<command> [message]
-           Example /c - Sets chat channel to clan
-           Example /c Hi - Says "Hi" in the clan channel
 
   m:
     description: Sends a chat message to everyone in all worlds.
@@ -265,3 +346,17 @@ commands:
     description: Demotes player to previous rank
     usage: |
            /<command> [player]
+           
+  ignore:
+    description: Ignores or unignores a player
+    usage: |
+           /<command> <name>
+  me:
+    description: To be re-added later.
+    usage: |
+           /<command>
+           
+  mail:
+    description: Send mail (and attachments) to other players.
+    usage: |
+           /<command>

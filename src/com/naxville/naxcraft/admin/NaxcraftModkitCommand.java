@@ -25,16 +25,12 @@ public class NaxcraftModkitCommand {
 		
 			String message = "Here you go, my leige!";
 			
-			if(!player.getInventory().contains(Material.GOLD_PICKAXE)){
-				player.getInventory().addItem(new ItemStack(Material.GOLD_PICKAXE, 1));
+			if(!player.getInventory().contains(Material.WATCH)){
+				player.getInventory().addItem(new ItemStack(Material.WATCH, 1));
 			}
 			
-			if(!player.getInventory().contains(Material.GOLD_AXE)){
-				player.getInventory().addItem(new ItemStack(Material.GOLD_AXE, 1));
-			}
-			
-			if(!player.getInventory().contains(Material.GOLD_HOE)){
-				player.getInventory().addItem(new ItemStack(Material.GOLD_HOE, 1));
+			if(!player.getInventory().contains(Material.COMPASS)){
+				player.getInventory().addItem(new ItemStack(Material.COMPASS, 1));
 			} 
 			
 			player.sendMessage(Naxcraft.ADMIN_COLOR + message);

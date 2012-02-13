@@ -1,12 +1,18 @@
 package com.naxville.naxcraft;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.entity.CraftCaveSpider;
 import org.bukkit.craftbukkit.entity.CraftCreature;
+import org.bukkit.craftbukkit.entity.CraftEnderman;
+import org.bukkit.craftbukkit.entity.CraftGiant;
 import org.bukkit.craftbukkit.entity.CraftPigZombie;
+import org.bukkit.craftbukkit.entity.CraftSilverfish;
 import org.bukkit.craftbukkit.entity.CraftSkeleton;
 import org.bukkit.craftbukkit.entity.CraftSpider;
 import org.bukkit.craftbukkit.entity.CraftWolf;
@@ -14,16 +20,15 @@ import org.bukkit.craftbukkit.entity.CraftZombie;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Ghast;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Slime;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageByProjectileEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 
 import com.naxville.naxcraft.autoareas.AutoBase;
 
-public class Announcer 
+public class Announcer
 {
 	Naxcraft plugin;
 	private Map<Player, String> killMessages = new HashMap<Player, String>();
@@ -40,20 +45,44 @@ public class Announcer
 	
 	public void announce(String str, World world)
 	{
-		for(Player player : world.getPlayers())
+		List<Player> players = world.getPlayers();
+		
+		for (Player player : players)
 		{
+			if (player == null || !player.isOnline()) continue;
 			player.sendMessage(str);
 		}
+		
+		System.out.println(str);
 	}
-
-	public void handleEntityDamage(EntityDamageEvent event) 
+	
+	public void announceToOtherWorlds(String str, World world)
 	{
-		if(!(event.getEntity() instanceof Player))
-			return;
+		for (World w : plugin.getServer().getWorlds())
+		{
+			if (w.equals(world)) continue;
+			
+			List<Player> players = w.getPlayers();
+			
+			for (Player player : players)
+			{
+				if (player == null || !player.isOnline()) continue;
+				player.sendMessage(str);
+			}
+		}
 		
-		Player player = (Player)event.getEntity();
+		System.out.println(str);
+	}
+	
+	public void handleEntityDamage(EntityDamageEvent event)
+	{
+		if (!(event.getEntity() instanceof Player)) return;
 		
-		if(player.getHealth() - event.getDamage() <= 0)
+		if (event.isCancelled()) return;
+		
+		Player player = (Player) event.getEntity();
+		
+		if (player.getHealth() - event.getDamage() <= 0)
 		{
 			killMessages.put(player, getKiller(event));
 		}
@@ -61,14 +90,13 @@ public class Announcer
 	
 	public void handleEntityDeath(EntityDeathEvent event)
 	{
-		if(!(event.getEntity() instanceof Player))
-			return;
+		if (!(event.getEntity() instanceof Player)) return;
 		
-		Player player = (Player)event.getEntity();
+		Player player = (Player) event.getEntity();
 		
-		if(killMessages.containsKey(player) && killMessages.get(player) != null)
+		if (killMessages.containsKey(player) && killMessages.get(player) != null)
 		{
-			if(killMessages.get(player) == "")
+			if (killMessages.get(player) == "")
 			{
 				announce(plugin.playerManager.getDisplayName(player) + Naxcraft.MSG_COLOR + " has died!", player.getWorld());
 			}
@@ -80,126 +108,323 @@ public class Announcer
 		}
 	}
 	
-	public String getKiller(EntityDamageEvent event){
+	public String getKiller(EntityDamageEvent event)
+	{
 		String cause = "";
 		
-		if(event instanceof EntityDamageByEntityEvent)
+		if (event instanceof EntityDamageByEntityEvent)
 		{
-			EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent)event;
-            Entity e = ev.getDamager();
-            
-            if(e instanceof Player)
-            {		            	
-            	String item = "";
-            	if(((Player)e).getItemInHand().getType() != Material.AIR)
-            	{
-            		item += "a " + ((Player)e).getItemInHand().getType().toString().replace("_", " ").toLowerCase().replace("spade", "shovel");
-            	} 
-            	else 
-            	{
-            		item += "their bare hands";
-            	}
-            	cause = plugin.getNickName(((Player)e)) + Naxcraft.MSG_COLOR + " with " + item;
-            	
-            } 
-            else 
-            {
-            	if(e instanceof CraftCreature)
-            	{
-            		CraftCreature c = (CraftCreature)e;
-            		if(c instanceof CraftSkeleton)
-            		{ 
-	            		cause = "trying to steal bones";
-	            	} 
-            		else if (c instanceof CraftSpider) 
-            		{
-	            		cause = "getting all silky";
-	            	}  
-            		else if (c instanceof Ghast) 
-            		{
-	            		cause = "ghastsmack";
-	            	} 
-            		else if (c instanceof CraftPigZombie)
-            		{
-	            		cause = "zombie pork";
-	            	} 
-            		else if (c instanceof CraftZombie) 
-            		{
-	            		cause = "donating his brain";
-	            	} 
-            		else if (c instanceof Slime)
-            		{
-	            		cause = "getting all slimey";
-	            	} 
-            		else if (c instanceof CraftWolf)
-            		{
-	            		cause = "playing fetch";
-	            	}
-            	} 
-            }
-		} 
-		else if (event instanceof EntityDamageByProjectileEvent)
-		{
-			EntityDamageByProjectileEvent ev = 	(EntityDamageByProjectileEvent)event;
-			AutoBase base = plugin.autoAreaManager.getBase(ev.getDamager().getLocation().getBlock());
+			EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent) event;
+			Entity e = ev.getDamager();
 			
-			if(base != null)
+			if (e instanceof Player)
 			{
-				cause = "a trap owned by " + base.getFounderName();
-			} 
-			else 
-			{
-				cause = "in the wild by a dispenser";
+				String item = "";
+				if (((Player) e).getItemInHand().getType() != Material.AIR)
+				{
+					item += "a " + ((Player) e).getItemInHand().getType().toString().replace("_", " ").toLowerCase().replace("spade", "shovel");
+				}
+				else
+				{
+					item += "their bare hands";
+				}
+				cause = plugin.getNickName(((Player) e)) + Naxcraft.MSG_COLOR + " with " + item;
+				
 			}
-			
-		} 
-		else 
+			else if (e instanceof Projectile)
+			{
+				AutoBase base = plugin.autoAreaManager.getBase(ev.getDamager().getLocation().getBlock());
+				
+				if (base != null)
+				{
+					cause = "a trap owned by " + base.getFounderName();
+				}
+				else
+				{
+					cause = "in the wild by a dispenser";
+				}
+			}
+			else
+			{
+				if (e instanceof CraftCreature)
+				{
+					Random r = new Random();
+					CraftCreature c = (CraftCreature) e;
+					String[] messages;
+					if (c instanceof CraftSkeleton)
+					{
+						messages = new String[]
+						{
+								"trying to steal bones",
+								"getting boned",
+								"stealing from Uncle Muscles' charity",
+								"Muscles for Bones charity",
+								"picking his teeth with a skeleton"
+						};
+						cause = messages[r.nextInt(messages.length)];
+						
+					}
+					else if (c instanceof CraftGiant)
+					{
+						messages = new String[]
+						{
+								"getting squashed",
+								"failing to beat Goliath",
+								"being a bad David",
+								"not using a slingshot",
+								"not being a good David"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof CraftEnderman)
+					{
+						messages = new String[]
+						{
+								"getting spooked",
+								"getting picked up by an Enderman",
+								"noticing things they shouldn't",
+								"observing things they shouldn't",
+								"looking at an Enderman the wrong way"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof CraftSilverfish)
+					{
+						messages = new String[]
+						{
+								"getting nibbled on",
+								"so many bugs",
+								"oh god they're everywhere",
+								"bugs in their eyes",
+								"bugs everywhere"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof CraftCaveSpider)
+					{
+						messages = new String[]
+						{
+								"poisoned silk",
+								"poisoned farts",
+								"getting even with Romeo",
+								"turing into Venom",
+								"wishing there was antivenom"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof CraftSpider)
+					{
+						messages = new String[]
+						{
+								"getting all silky",
+								"spinning web",
+								"Charlotte's Web",
+								"spindles, so many spindles",
+								"picking his teeth with a skeleton"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof Ghast)
+					{
+						messages = new String[]
+						{
+								"ghastsmax",
+								"ghastsmacked",
+								"ghastthrashed",
+								"fire ball'd"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof CraftPigZombie)
+					{
+						messages = new String[]
+						{
+								"zombie pork",
+								"nibbling on zombie pork",
+								"stealing zombie pork",
+								"asking a zombie pork where it got its gold sword"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof CraftZombie)
+					{
+						messages = new String[]
+						{
+								"donating their brain",
+								"trying to lick some rotten flesh",
+								"living rotten flesh",
+								"wondering why zombies don't drop feathers anymore"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof Slime)
+					{
+						messages = new String[]
+						{
+								"getting all slimey",
+								"getting slimed",
+								"oh god there's so many slimes",
+								"what do you mean if you kill a big slime more pop out?"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+					else if (c instanceof CraftWolf)
+					{
+						messages = new String[]
+						{
+								"puppies!",
+								"getting eaten alive by puppies",
+								"licked too hard by puppies",
+								"so many puppies, so little flesh"
+						};
+						cause = messages[r.nextInt(messages.length)];
+					}
+				}
+			}
+		}
+		else
 		{
-			switch(event.getCause())
+			Random r = new Random();
+			String[] messages;
+			
+			switch (event.getCause())
 			{
 				case BLOCK_EXPLOSION:
-					cause = "cat smack";
+					messages = new String[]
+					{
+							"cat smack",
+							"playing with dynamite"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
 				
 				case CONTACT:
-					cause = "snuggling with desert plants";
+					messages = new String[]
+					{
+							"snuggling with desert plants",
+							"feeling up the scenery",
+							"touching things they shouldn't",
+							"getting pricked"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
 				
 				case FIRE_TICK:
-					cause = "roastin'";
+					messages = new String[]
+					{
+							"roastin'",
+							"toastin'",
+							"making smores",
+							"eating fire"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
-					
+				
 				case SUFFOCATION:
-					cause = "attempting a block transfusion";
+					messages = new String[]
+					{
+							"attempting a block transfusion",
+							"checking out a block texture up close",
+							"huffing blocks",
+							"snorting cubes"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
 				
 				case DROWNING:
-					cause = "failing at holding spacebar";
+					messages = new String[]
+					{
+							"failing at holding spacebar",
+							"not knowing they can't breathe that water",
+							"drinking too much",
+							"being an h2o-aholic",
+							"snuffin' water"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
-					
+				
 				case FALL:
-					cause = "challenging virtual gravity";
+					messages = new String[]
+					{
+							"challenging virtual gravity",
+							"learning how to fly the hard way",
+							"splatting",
+							"becoming two dimensional",
+							"wut gravity u guise",
+							"oh there's falling damage in this game?",
+							"trying to become puddin'"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
-					
+				
 				case LAVA:
-					cause = "having skeleton legs";
+					messages = new String[]
+					{
+							"having skeleton legs",
+							"being about to ragequit at lava",
+							"slippin' and roastin'",
+							"drinking hot liquids",
+							"exposing their skeleton to magma"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
-					
+				
 				case FIRE:
-					cause = "not walking into water";
+					messages = new String[]
+					{
+							"not walking into water",
+							"getting crispy",
+							"roastin' marshmallows"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
 				
 				case ENTITY_EXPLOSION:
-					cause = "chillin' with creepers";
+					messages = new String[]
+					{
+							"getting blown",
+							"getting knocked around",
+							"getting blasted"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
-					
+				
 				case LIGHTNING:
-					cause = "having a shocking old time";
+					messages = new String[]
+					{
+							"having a shocking old time",
+							"getting zapped",
+							"zap'd"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
 				
 				case ENTITY_ATTACK:
-					cause = "getting beaten up";
+					messages = new String[]
+					{
+							"getting beaten up",
+							"pow punched",
+							"no one ever dies from this"
+
+					};
+					cause = messages[r.nextInt(messages.length)];
 					break;
+				
+				case SUICIDE:
+					messages = new String[]
+					{
+							"committing suicide?!"
+					};
 					
 				case VOID:
 					cause = "attempting to explore the great unknown";
@@ -212,14 +437,5 @@ public class Announcer
 		}
 		
 		return cause;
-	}
-
-	public void handlePlayerTeleport(PlayerTeleportEvent event) 
-	{
-		if(event.getFrom().getWorld().getName() != event.getTo().getWorld().getName())
-		{
-			plugin.getServer().broadcastMessage(plugin.getNickName(event.getPlayer()) + Naxcraft.MSG_COLOR + " is now in " + plugin.getWorldName(event.getTo().getWorld(), true));
-		}
-		
 	}
 }

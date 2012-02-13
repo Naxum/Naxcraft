@@ -20,7 +20,7 @@ public class NaxcraftTphereCommand {
 		}
 		
 		Player player = (Player) sender;
-		if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
+		if(plugin.playerManager.getPlayer(player).rank.isDemiAdmin()){
 		
 			if(args.length == 0) {
 				return false;

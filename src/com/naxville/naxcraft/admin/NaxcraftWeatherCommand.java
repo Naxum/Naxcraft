@@ -14,7 +14,7 @@ public class NaxcraftWeatherCommand {
 	}
 	
 	public boolean runCommand(CommandSender sender, String[] args){
-		if(!(sender instanceof Player)){
+		if(!(sender instanceof Player) || !plugin.playerManager.getPlayer((Player)sender).rank.isDemiAdmin()){
 			sender.sendMessage("Knock it off");
 			return true;
 		}

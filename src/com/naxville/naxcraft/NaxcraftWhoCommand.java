@@ -25,7 +25,7 @@ public class NaxcraftWhoCommand {
 		
 		for(World world : plugin.getServer().getWorlds())
 		{
-			String message = Naxcraft.MSG_COLOR + " -" + plugin.getWorldName(world, true) + ": ";
+			String message = Naxcraft.MSG_COLOR + "[" + plugin.getWorldName(world, true) + "]: ";
 			int i = 0;
 			
 			for(Player player : world.getPlayers())	

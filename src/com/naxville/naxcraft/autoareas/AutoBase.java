@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -14,9 +13,9 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 import com.naxville.naxcraft.Naxcraft;
-import com.naxville.naxcraft.NaxcraftClan;
+import com.naxville.naxcraft.autoareas.AutoAreaManager.Flag;
 
-public class AutoBase 
+public class AutoBase
 {
 	public AutoAreaManager autoAreaManager;
 	public String id;
@@ -24,7 +23,7 @@ public class AutoBase
 	public List<String> otherOwners = new ArrayList<String>();
 	public World world;
 	public List<Point> chunks = new ArrayList<Point>();
-	public Map<String, Boolean> flags = new HashMap<String, Boolean>();
+	public Map<Flag, Boolean> flags = new HashMap<Flag, Boolean>();
 	
 	public AutoBase(AutoAreaManager autoAreaManager, String id, String owner, World world)
 	{
@@ -36,7 +35,7 @@ public class AutoBase
 		initiateFlags();
 	}
 	
-	public AutoBase(AutoAreaManager autoAreaManager, String id, String owner, List<String> otherOwners, World world, List<Point> chunks, Map<String, Boolean> flags)
+	public AutoBase(AutoAreaManager autoAreaManager, String id, String owner, List<String> otherOwners, World world, List<Point> chunks, Map<Flag, Boolean> flags)
 	{
 		this.autoAreaManager = autoAreaManager;
 		this.id = id;
@@ -51,31 +50,19 @@ public class AutoBase
 	
 	public void initiateFlags()
 	{
-		List<String> flugs = new ArrayList<String>();
-		
-		flugs.add("pvp");
-		flugs.add("safe");
-		flugs.add("nopvp");
-		flugs.add("sanctuary");
-		flugs.add("grinder");
-		flugs.add("creative");
-		flugs.add("public");
-		flugs.add("hurt");
-		flugs.add("lock");
-		flugs.add("jail");
-		
 		boolean resave = false;
 		
-		for(String flag : flugs)
+		for (Flag f : Flag.values())
 		{
-			if(!flags.containsKey(flag))
+			if (!flags.containsKey(f))
 			{
-				flags.put(flag, false);
+				flags.put(f, false);
+				
 				resave = true;
 			}
 		}
 		
-		if(resave)
+		if (resave)
 		{
 			save();
 		}
@@ -83,44 +70,43 @@ public class AutoBase
 	
 	public boolean playerClose(Player player)
 	{
-		for(Point chunk : chunks)
+		if (world.getName() != player.getWorld().getName()) { return false; }
+		
+		for (Point chunk : chunks)
 		{
 			Chunk c = world.getChunkAt(chunk.x, chunk.y);
 			
-			if(c.getBlock(8, 60, 8).getLocation().distance(player.getLocation()) < 600)
-			{
-				return true;
-			}
+			if (c.getBlock(8, 60, 8).getLocation().distance(player.getLocation()) < 400) { return true; }
 		}
 		return false;
 	}
 	
 	public void showBorders(Player player)
 	{
-		for(Point chunk : chunks)
-		{			
+		for (Point chunk : chunks)
+		{
 			Chunk c = world.getChunkAt(chunk.x, chunk.y);
-			for(int x = 0; x < 2; x++)
+			for (int x = 0; x < 2; x++)
 			{
-				for(int z = 0; z < 2; z++)
+				for (int z = 0; z < 2; z++)
 				{
-					for(int y = 0; y < 128; y += 5)
+					for (int y = 0; y < 128; y += 20)
 					{
 						Block b = c.getBlock(x * 15, y, z * 15);
 						
-						if(b.getType() != Material.AIR) continue;
+						if (b.getType() != Material.AIR) continue;
 						
-						if(autoAreaManager.isSuperOwner(player, this))
+						if (autoAreaManager.isSuperOwner(player, this))
 						{
-							player.sendBlockChange(b.getLocation(), Material.GOLD_BLOCK, (byte)0);	
+							player.sendBlockChange(b.getLocation(), Material.GOLD_BLOCK, (byte) 0);
 						}
 						else if (autoAreaManager.isOwner(player, this))
 						{
-							player.sendBlockChange(b.getLocation(), Material.WOOL, (byte)11);
+							player.sendBlockChange(b.getLocation(), Material.WOOL, (byte) 11);
 						}
 						else
 						{
-							player.sendBlockChange(b.getLocation(), Material.WOOL, (byte)14);
+							player.sendBlockChange(b.getLocation(), Material.WOOL, (byte) 14);
 						}
 					}
 				}
@@ -130,19 +116,19 @@ public class AutoBase
 	
 	public void hideBorders(Player player)
 	{
-		for(Point chunk : chunks)
-		{			
+		for (Point chunk : chunks)
+		{
 			Chunk c = world.getChunkAt(chunk.x, chunk.y);
-			for(int x = 0; x < 2; x++)
+			for (int x = 0; x < 2; x++)
 			{
-				for(int z = 0; z < 2; z++)
+				for (int z = 0; z < 2; z++)
 				{
-					for(int y = 0; y < 128; y += 5)
+					for (int y = 0; y < 128; y += 20)
 					{
 						Block b = c.getBlock(x * 15, y, z * 15);
 						
-						if(b.getType() != Material.AIR) continue;
-					
+						if (b.getType() != Material.AIR) continue;
+						
 						player.sendBlockChange(b.getLocation(), b.getType(), b.getData());
 					}
 				}
@@ -150,14 +136,8 @@ public class AutoBase
 		}
 	}
 	
-	public boolean toggleFlag(String flag)
+	public boolean toggleFlag(Flag flag)
 	{
-		if(!flags.containsKey(flag))
-		{
-			System.out.println("Can't toggle unknown flag!");
-			return false;
-		}
-		
 		flags.put(flag, !flags.get(flag));
 		
 		save();
@@ -165,14 +145,8 @@ public class AutoBase
 		return flags.get(flag);
 	}
 	
-	public boolean getFlag(String flag)
+	public boolean hasFlag(Flag flag)
 	{
-		if(!flags.containsKey(flag))
-		{
-			System.out.println("AutoBase Error: Unknown flag!");
-			return false;
-		}
-		
 		return flags.get(flag);
 	}
 	
@@ -180,35 +154,25 @@ public class AutoBase
 	{
 		autoAreaManager.saveBase(this);
 	}
-
-	public String getBuilderNames() 
+	
+	public String getBuilderNames()
 	{
 		String name = "";
 		int i = 0;
 		
-		if(otherOwners != null && !otherOwners.isEmpty())
+		if (otherOwners != null && !otherOwners.isEmpty())
 		{
-			for(String otherOwner : otherOwners)
+			for (String otherOwner : otherOwners)
 			{
-				if(i > 0) name += Naxcraft.MSG_COLOR + ", ";
+				if (i > 0) name += Naxcraft.MSG_COLOR + ", ";
 				
-				if(otherOwner.startsWith("clan:"))
-				{
-					name += ChatColor.GOLD + otherOwner.replace("clan:", "Clan ");
-				}
-				else
-				{
-					name += autoAreaManager.plugin.getNickName(otherOwner);
-				}
+				name += autoAreaManager.plugin.getNickName(otherOwner);
 				
 				i++;
 			}
 		}
 		
-		if(i == 0)
-		{
-			return Naxcraft.DEFAULT_COLOR + "No Builders";
-		}
+		if (i == 0) { return Naxcraft.DEFAULT_COLOR + "No Builders"; }
 		
 		return name;
 	}
@@ -217,46 +181,29 @@ public class AutoBase
 	{
 		List<String> owners = new ArrayList<String>();
 		
-		if(otherOwners != null && !otherOwners.isEmpty())
+		if (otherOwners != null && !otherOwners.isEmpty())
 		{
-			for(String otherOwner : otherOwners)
-			{				
-				if(otherOwner.startsWith("clan:"))
-				{
-					NaxcraftClan clan = autoAreaManager.plugin.clanCommand.getClan(otherOwner.replace("clan:", ""));
-					
-					if(clan != null)
-					{
-						for(String s : clan.getAllMembers())
-						{
-							owners.add(s);
-						}
-					}
-				}
-				else
-				{
-					owners.add(otherOwner);
-				}
+			for (String otherOwner : otherOwners)
+			{
+				owners.add(otherOwner);
 			}
 		}
 		
 		return owners;
 	}
 	
+	public boolean isOwner(Player player)
+	{
+		return autoAreaManager.isOwner(player, this);
+	}
+	
 	public String getFounderName()
 	{
-		if(owner.startsWith("clan:"))
-		{
-			return ChatColor.GOLD + owner.replace("clan:", "Clan ");
-		}
-		else
-		{
-			return autoAreaManager.plugin.getNickName(owner);
-		}
+		return autoAreaManager.plugin.getNickName(owner);
 	}
-
-	public int getChunkMultiplier() 
+	
+	public int getChunkMultiplier()
 	{
-		return (chunks.size() / 15) + 1;
+		return (chunks.size() / 16) + 1;
 	}
 }

@@ -42,9 +42,9 @@ public class NaxcraftSpawnMobCommand {
 					return true;
 				}
 				
-				if(amount > 15){
-					player.sendMessage(Naxcraft.ERROR_COLOR + "That number was crazy high, defaulting to 15.");
-					amount = 15;
+				if(amount > 30){
+					player.sendMessage(Naxcraft.ERROR_COLOR + "That number was crazy high, defaulting to 30.");
+					amount = 30;
 				}
 			}
 			

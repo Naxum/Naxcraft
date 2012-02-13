@@ -1,46 +1,58 @@
 package com.naxville.naxcraft.admin;
 
-import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import com.naxville.naxcraft.Naxcraft;
 
-public class NaxcraftMotdCommand {
+public class NaxcraftMotdCommand
+{
 	
 	public static Naxcraft plugin;
 	
-	public NaxcraftMotdCommand(Naxcraft instance){
+	public NaxcraftMotdCommand(Naxcraft instance)
+	{
 		plugin = instance;
 	}
 	
-	public boolean runMotdCommand(CommandSender sender, String[] args){
-		if(args.length == 0) {
+	public boolean runMotdCommand(CommandSender sender, String[] args)
+	{
+		if (args.length == 0)
+		{
 			sender.sendMessage(Naxcraft.ADMIN_COLOR + "MOTD:" + plugin.motd);
 			return true;
 		}
 		
-		if(plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()){
-			if(args.length < 2) {
+		if (plugin.playerManager.getPlayer((Player) sender).rank.isAdmin())
+		{
+			if (args.length < 2)
+			{
 				return false;
 				
-			} else {
+			}
+			else
+			{
 				
 				String newMotd = "";
 				int i = 0;
-				for(String arg : args){
-					if(i!=0){
+				for (String arg : args)
+				{
+					if (i != 0)
+					{
 						newMotd += " " + arg;
 					}
 					i++;
 				}
 				
-				plugin.getServer().broadcastMessage(Naxcraft.ADMIN_COLOR + "MOTD:" + Naxcraft.COLORS[Integer.parseInt(args[0])] + newMotd);
+				plugin.announcer.announce(Naxcraft.ADMIN_COLOR + "MOTD:" + Naxcraft.COLORS[Integer.parseInt(args[0])] + newMotd);
 				plugin.motd = Naxcraft.COLORS[Integer.parseInt(args[0])] + newMotd;
 			}
-		} else {
+		}
+		else
+		{
 			sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/motd"));
 		}
 		return true;
 	}
-
+	
 }

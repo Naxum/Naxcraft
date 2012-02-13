@@ -1,36 +1,38 @@
 package com.naxville.naxcraft.shops;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
+import com.naxville.naxcraft.NaxFile;
 import com.naxville.naxcraft.Naxcraft;
-import com.naxville.naxcraft.admin.NaxcraftConfiguration;
+import com.naxville.naxcraft.autoareas.AutoAreaManager.Flag;
+import com.naxville.naxcraft.autoareas.AutoBase;
 
-public class ShopManager {
+public class ShopManager
+{
 	public Naxcraft plugin;
 	protected Map<String, Material> materials;
 	protected Map<Location, Shop> shops;
-	protected NaxcraftConfiguration config;
+	protected NaxFile config;
 	protected int id;
 	
-	public ShopManager (Naxcraft plugin){
+	public ShopManager(Naxcraft plugin)
+	{
 		this.plugin = plugin;
+		
 		shops = new HashMap<Location, Shop>();
 		
 		materials = new HashMap<String, Material>();
@@ -71,224 +73,261 @@ public class ShopManager {
 	
 	/**
 	 * Checks the player's permission for "super," and creates a shop if correctly syntaxed.
-	 * @param player Player that placed the sign
-	 * @param event The sign event because the sign isn't udpated until after the event.
+	 * 
+	 * @param player
+	 *            Player that placed the sign
+	 * @param event
+	 *            The sign event because the sign isn't udpated until after the event.
 	 */
-	public void handleSign(SignChangeEvent event) {
+	public void handleSign(SignChangeEvent event)
+	{
 		Player player = event.getPlayer();
 		
-		if(plugin.playerManager.getPlayer(player).rank.isAdmin()){
-			boolean correct = true;
+		AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
+		
+		if (base == null || (!base.hasFlag(Flag.MERCHANT) || !plugin.autoAreaManager.isOwner(player, base)))
+		{
+			if (!plugin.playerManager.getPlayer(player).rank.isAdmin()) { return; }
+		}
+		
+		boolean correct = true;
+		
+		Material price = Material.AIR;
+		int priceAmount = 0;
+		
+		Material good = Material.AIR;
+		int goodAmount = 0;
+		
+		if (!event.getLine(0).equalsIgnoreCase("buy"))
+		{
+			correct = false;
+			return;
+		}
+		
+		Pattern p = Pattern.compile("\\d*[a-zA-Z\\s]*");
+		Matcher m = p.matcher(event.getLine(1));
+		
+		if (!m.matches())
+		{
+			correct = false;
 			
-			Material price = Material.AIR;
-			int priceAmount = 0;
+		}
+		else
+		{
+			String[] split = event.getLine(1).split(" ");
 			
-			Material good = Material.AIR;
-			int goodAmount = 0;
-			
-			if(!event.getLine(0).equalsIgnoreCase("buy")){
+			try
+			{
+				goodAmount = Integer.parseInt(split[0]);
+			}
+			catch (NumberFormatException e)
+			{
 				correct = false;
 				return;
 			}
 			
-			Pattern p = Pattern.compile("\\d*[a-zA-Z\\s]*");
-			Matcher m = p.matcher(event.getLine(1));
-			
-			if(!m.matches()){
-				correct = false;
+			split[0] = "";
+			String mat = arrayToString(split);
+			if (this.materials.containsKey(mat))
+			{
+				good = this.materials.get(mat);
 				
-			} else {
-				String[] split = event.getLine(1).split(" ");
-				
-				goodAmount = Integer.parseInt(split[0]);
-				
-				split[0] = "";
-				String mat = arrayToString(split);
-				if(this.materials.containsKey(mat)){
-					good = this.materials.get(mat);
-					
-				} else {
-					String fixedup = mat.replace(" ", "_").toUpperCase();
-					if(Material.getMaterial(fixedup) != null){
-						good = Material.getMaterial(fixedup);
-					} else {
-						player.sendMessage(Naxcraft.ERROR_COLOR + "Error: " + Naxcraft.DEFAULT_COLOR + mat + Naxcraft.ERROR_COLOR + " is not a material.");
-						correct = false;
-					}
+			}
+			else
+			{
+				String fixedup = mat.replace(" ", "_").toUpperCase();
+				if (Material.getMaterial(fixedup) != null)
+				{
+					good = Material.getMaterial(fixedup);
+				}
+				else
+				{
+					player.sendMessage(Naxcraft.ERROR_COLOR + "Error: " + Naxcraft.DEFAULT_COLOR + mat + Naxcraft.ERROR_COLOR + " is not a material.");
+					correct = false;
 				}
 			}
+		}
+		
+		if (!event.getLine(2).equalsIgnoreCase("for"))
+		{
+			correct = false;
+		}
+		
+		m = p.matcher(event.getLine(3));
+		
+		if (!m.matches())
+		{
+			correct = false;
+		}
+		else
+		{
+			String[] split = event.getLine(3).split(" ");
 			
-			if(!event.getLine(2).equalsIgnoreCase("for")){
-				correct = false;
-			}
-			
-			m = p.matcher(event.getLine(3));
-			
-			if(!m.matches()){
-				correct = false;
-			} else {
-				String[] split = event.getLine(3).split(" ");
-				
+			try
+			{
 				priceAmount = Integer.parseInt(split[0]);
-				
-				split[0] = "";
-				String mat = arrayToString(split);
-				if(this.materials.containsKey(mat)){
-					price = this.materials.get(mat);
-					
-				} else {
-					String fixedup = mat.replace(" ", "_").toUpperCase();
-					if(Material.getMaterial(fixedup) != null){
-						price = Material.getMaterial(fixedup);
-					} else {
-						player.sendMessage(Naxcraft.ERROR_COLOR + "Error: " + Naxcraft.DEFAULT_COLOR + mat + Naxcraft.ERROR_COLOR + " is not a material.");
-						correct = false;
-					}
-				}
+			}
+			catch (NumberFormatException e)
+			{
+				correct = false;
+				return;
 			}
 			
-			if(correct){
-				event.setLine(0, ""+ChatColor.RED + event.getLine(0));
-				Shop shop = new Shop(id, event.getBlock().getLocation(), good, goodAmount, price, priceAmount, event.getLines(), event.getPlayer().getName().toLowerCase());
-				this.shops.put(event.getBlock().getLocation(), shop);
-				this.save(shop);
+			split[0] = "";
+			String mat = arrayToString(split);
+			if (this.materials.containsKey(mat))
+			{
+				price = this.materials.get(mat);
 				
-				id++;
-				player.sendMessage(Naxcraft.MSG_COLOR + "You " + Naxcraft.SUCCESS_COLOR + "successfully" + Naxcraft.MSG_COLOR +" created a shop.");
-				
-			} else {
-				//player.sendMessage("Error for some reason. :(");
 			}
+			else
+			{
+				String fixedup = mat.replace(" ", "_").toUpperCase();
+				if (Material.getMaterial(fixedup) != null)
+				{
+					price = Material.getMaterial(fixedup);
+				}
+				else
+				{
+					player.sendMessage(Naxcraft.ERROR_COLOR + "Error: " + Naxcraft.DEFAULT_COLOR + mat + Naxcraft.ERROR_COLOR + " is not a material.");
+					correct = false;
+				}
+			}
+		}
+		
+		if (correct)
+		{
+			event.setLine(0, "" + ChatColor.RED + event.getLine(0));
+			Shop shop = new Shop(this, id, event.getBlock().getLocation(), good, goodAmount, price, priceAmount, event.getLines(), event.getPlayer().getName().toLowerCase());
+			this.shops.put(event.getBlock().getLocation(), shop);
+			this.save(shop);
+			
+			id++;
+			player.sendMessage(Naxcraft.MSG_COLOR + "You " + Naxcraft.SUCCESS_COLOR + "successfully" + Naxcraft.MSG_COLOR + " created a shop.");
+			
+		}
+		else
+		{
+			// player.sendMessage("Error for some reason. :(");
 		}
 	}
 	
 	/**
 	 * Handles a player attempting to buy from a shop, on right click of a sign.
 	 */
-	public void handleShopClick(PlayerInteractEvent event){
-		if(event.getAction() != Action.RIGHT_CLICK_BLOCK)
-		{
-			return;
-		}
+	public void handleShopClick(PlayerInteractEvent event)
+	{
+		if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.isCancelled()) { return; }
 		
-		if(this.shops.containsKey(event.getClickedBlock().getLocation())){
+		if (this.shops.containsKey(event.getClickedBlock().getLocation()))
+		{
 			this.shops.get(event.getClickedBlock().getLocation()).buy(event.getPlayer());
 			event.setCancelled(true);
 		}
 	}
 	
-	private void loadShopFile(){
-		File file = new File(plugin.filePath);
-		try {
-		if (!file.exists()){
-			file.mkdir();
-		}
-		file = new File(plugin.filePath + "Shops.yml");
-		if (!file.exists()){
-			file.createNewFile();
-			initalizeFile();
-		}
-		} catch (IOException Ex) {
-			System.out.println("Error creating new Shop file.");
-			return;
-		}
-		
-		config = new NaxcraftConfiguration(file);
-		config.load();
-	}
-	
-	private void initalizeFile(){
-		File file = new File(plugin.filePath + "Shops.yml");
-		try {
-			
-			BufferedWriter output = new BufferedWriter(new FileWriter(file));
-			output.write("shops: {}");
-			output.close();
-			
-		} catch (Exception Ex) {
-			System.out.println("Error initializing shop file.");
-		}
-	}
-	
 	public boolean loadShops()
 	{
-		loadShopFile();
-		List<String>shopList = config.getKeys("shops");
+		config = new NaxFile(plugin, "shops");
 		
-		if(shopList == null || shopList.isEmpty()) return true;
+		Set<String> shopList = config.getConfigurationSection("shops").getKeys(false);
 		
-		for (String id : shopList){					
+		if (shopList == null || shopList.isEmpty()) return true;
+		
+		for (String id : shopList)
+		{
 			String prefix = "shops." + id + ".";
 			
-			Location location = new Location(plugin.getServer().getWorld(config.getString(prefix + ".world")), 
+			if (!config.contains(prefix + "world")) continue;
+			
+			World world = plugin.getServer().getWorld(config.getString(prefix + "world"));
+			
+			if (world == null)
+			{
+				System.out.println("null world");
+				continue;
+			}
+			
+			Location location = new Location(world,
 													Double.parseDouble(config.getString(prefix + "location.x")),
 													Double.parseDouble(config.getString(prefix + "location.y")),
-													Double.parseDouble(config.getString(prefix + "location.z")));		
+													Double.parseDouble(config.getString(prefix + "location.z")));
 			
-			String owner = config.getString(prefix+"owner");
+			String owner = config.getString(prefix + "owner");
 			
-			String[] lines = { config.getString(prefix+"line1"), config.getString(prefix+"line2"), config.getString(prefix+"line3"), config.getString(prefix+"line4") };
+			String[] lines = { config.getString(prefix + "line1"), config.getString(prefix + "line2"), config.getString(prefix + "line3"), config.getString(prefix + "line4") };
 			
-			Material good = Material.getMaterial(config.getString(prefix+"good"));
-			int goodAmount = Integer.parseInt(config.getString(prefix+"goodAmount"));
+			Material good = Material.getMaterial(config.getString(prefix + "good"));
+			int goodAmount = config.getInt(prefix + "goodAmount");
 			
-			Material price = Material.getMaterial(config.getString(prefix+"price"));
-			int priceAmount = Integer.parseInt(config.getString(prefix+"priceAmount"));
+			Material price = Material.getMaterial(config.getString(prefix + "price"));
+			int priceAmount = config.getInt(prefix + "priceAmount");
 			
-			this.shops.put(location, new Shop(Integer.parseInt(id), location, good, goodAmount, price, priceAmount, lines, owner));
-			if(this.id < Integer.parseInt(id)+1){
-				this.id = Integer.parseInt(id)+1;
+			this.shops.put(location, new Shop(this, Integer.parseInt(id), location, good, goodAmount, price, priceAmount, lines, owner));
+			if (this.id < Integer.parseInt(id) + 1)
+			{
+				// System.out.println("New shop with: " + Integer.parseInt(id) + ", " + location.toString() + ", " + good.toString() + ", " + goodAmount + ", " + price.toString() + ", " + priceAmount + ", " + lines.toString() + ", " + owner);
+				this.id = Integer.parseInt(id) + 1;
 			}
-		}		
+		}
 		return true;
 	}
 	
-	protected void save(Shop shop){
+	protected void save(Shop shop)
+	{
 		String prefix = "shops." + shop.getId() + ".";
 		
-		config.setProperty(prefix +".world", shop.world.getName());
+		config.set(prefix + ".world", shop.world.getName());
 		
-		config.setProperty(prefix+"location.x", shop.saveX());
-		config.setProperty(prefix+"location.y", shop.saveY());
-		config.setProperty(prefix+"location.z", shop.saveZ());
+		config.set(prefix + "location.x", shop.saveX());
+		config.set(prefix + "location.y", shop.saveY());
+		config.set(prefix + "location.z", shop.saveZ());
 		
-		config.setProperty(prefix+"owner", shop.saveOwner());
+		config.set(prefix + "owner", shop.saveOwner());
 		
-		for(int i=1; i < 5; i++){
-			config.setProperty(prefix+"line"+i, shop.getLines()[i-1]);
+		for (int i = 1; i < 5; i++)
+		{
+			config.set(prefix + "line" + i, shop.getLines()[i - 1]);
 		}
 		
-		config.setProperty(prefix+"good", shop.saveGood());
-		config.setProperty(prefix+"goodAmount", shop.saveGoodAmount());
+		config.set(prefix + "good", shop.saveGood());
+		config.set(prefix + "goodAmount", shop.saveGoodAmount());
 		
-		config.setProperty(prefix+"price", shop.savePrice());
-		config.setProperty(prefix+"priceAmount", shop.savePriceAmount());
+		config.set(prefix + "price", shop.savePrice());
+		config.set(prefix + "priceAmount", shop.savePriceAmount());
 		
 		config.save();
 		return;
 	}
 	
-	protected void remove(Shop shop){
+	protected void remove(Shop shop)
+	{
 		this.shops.remove(shop.getLocation());
 		config.removeProperty("shops." + shop.getId());
 		config.save();
 	}
-
-	public void handleBlockBreak(BlockBreakEvent event) {
-		if(this.shops.containsKey(event.getBlock().getLocation())){
+	
+	public void handleBlockBreak(BlockBreakEvent event)
+	{
+		if (this.shops.containsKey(event.getBlock().getLocation()))
+		{
 			this.remove(this.shops.get(event.getBlock().getLocation()));
 			event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "Shop deleted.");
 		}
 	}
 	
-	private String arrayToString(String[] array){
+	private String arrayToString(String[] array)
+	{
 		StringBuffer buffer = new StringBuffer();
 		String seperator = " ";
 		int newWords = 0;
-		if(array.length > 0){
-			for(int i = 0; i < array.length; i++){
-				if(!array[i].equals("")){
-					if(newWords != 0) buffer.append(seperator);
+		if (array.length > 0)
+		{
+			for (int i = 0; i < array.length; i++)
+			{
+				if (!array[i].equals(""))
+				{
+					if (newWords != 0) buffer.append(seperator);
 					buffer.append(array[i]);
 					newWords++;
 				}

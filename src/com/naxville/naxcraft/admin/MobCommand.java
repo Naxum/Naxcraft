@@ -11,7 +11,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 import com.naxville.naxcraft.Naxcraft;
 
-public class MobCommand 
+public class MobCommand
 {
 	public Naxcraft plugin;
 	public Map<Player, CreatureType> list = new HashMap<Player, CreatureType>();
@@ -23,7 +23,7 @@ public class MobCommand
 	
 	public boolean runCommand(Player player, String args[])
 	{
-		if(args.length == 0)
+		if (args.length == 0)
 		{
 			list.put(player, CreatureType.PIG);
 		}
@@ -34,16 +34,16 @@ public class MobCommand
 			{
 				type = CreatureType.valueOf(args[0].toUpperCase());
 			}
-			catch (Exception e) 
+			catch (Exception e)
 			{
 			}
 			
-			if(type == null)
+			if (type == null)
 			{
 				player.sendMessage(Naxcraft.ERROR_COLOR + "Error: " + args[0] + " is not a creature type.");
 				String types = "Types: ";
 				
-				for(CreatureType i : CreatureType.values())
+				for (CreatureType i : CreatureType.values())
 				{
 					types += i.toString().toLowerCase() + ", ";
 				}
@@ -53,9 +53,9 @@ public class MobCommand
 			}
 			else
 			{
-				if(type == CreatureType.WOLF || type == CreatureType.GHAST || type == CreatureType.GIANT)
+				if (type == CreatureType.WOLF || type == CreatureType.GHAST || type == CreatureType.GIANT)
 				{
-					if(!plugin.superCommand.isSuper(player.getName()))
+					if (!SuperManager.isSuper(player))
 					{
 						player.sendMessage(Naxcraft.MSG_COLOR + "That mob type is only for admins.");
 						return true;
@@ -72,13 +72,15 @@ public class MobCommand
 	
 	public void handleBlockPlace(BlockPlaceEvent e)
 	{
-		if(e.getBlock().getType() != Material.MOB_SPAWNER)
+		if (e.isCancelled()) return;
+		
+		if (e.getBlock().getType() != Material.MOB_SPAWNER)
 		{
 			return;
 		}
 		else
 		{
-			if(list.containsKey(e.getPlayer()))
+			if (list.containsKey(e.getPlayer()))
 			{
 				CreatureSpawner x = (CreatureSpawner) e.getBlock().getState();
 				x.setCreatureType(list.get(e.getPlayer()));

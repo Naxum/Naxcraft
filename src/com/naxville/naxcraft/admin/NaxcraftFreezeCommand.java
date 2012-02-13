@@ -16,7 +16,7 @@ public class NaxcraftFreezeCommand {
 	}
 	
 	public boolean runFreezeCommand(CommandSender sender, String[] args){		
-		if(sender instanceof Player && !plugin.playerManager.getPlayer((Player)sender).rank.isAdmin()){
+		if(sender instanceof Player && !plugin.playerManager.getPlayer((Player)sender).rank.isDemiAdmin()){
 			sender.sendMessage(String.format(Naxcraft.PERMISSIONS_FAIL, "/freeze"));
 			return true;
 		}

@@ -5,7 +5,7 @@ import org.bukkit.entity.Player;
 
 import com.naxville.naxcraft.Naxcraft;
 
-public class AtmChecker implements Runnable 
+public class AtmChecker implements Runnable
 {
 	private Player player;
 	private AtmManager atmManager;
@@ -20,12 +20,11 @@ public class AtmChecker implements Runnable
 		this.owner = owner;
 	}
 	
-	@Override
-	public void run() 
+	public void run()
 	{
-		CraftPlayer p = (CraftPlayer)player;
+		CraftPlayer p = (CraftPlayer) player;
 		
-		if(p.getHandle().activeContainer == p.getHandle().defaultContainer)
+		if (p.getHandle().activeContainer == p.getHandle().defaultContainer)
 		{
 			atmManager.saveAccount(player);
 			player.sendMessage(Naxcraft.MSG_COLOR + "Thank you for using " + plugin.getNickName(owner) + Naxcraft.MSG_COLOR + "'s ATM!");
@@ -35,5 +34,5 @@ public class AtmChecker implements Runnable
 			plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new AtmChecker(player, plugin, atmManager, owner), 5);
 		}
 	}
-
+	
 }

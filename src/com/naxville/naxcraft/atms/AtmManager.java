@@ -1,23 +1,22 @@
 package com.naxville.naxcraft.atms;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.minecraft.server.EntityPlayer;
 
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
-import org.bukkit.craftbukkit.block.CraftChest;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
@@ -26,23 +25,26 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
+import com.naxville.naxcraft.NaxColor;
+import com.naxville.naxcraft.NaxFile;
+import com.naxville.naxcraft.NaxUtil;
 import com.naxville.naxcraft.Naxcraft;
-import com.naxville.naxcraft.admin.NaxcraftConfiguration;
-import com.naxville.naxcraft.admin.TileEntityVirtualChest;
+import com.naxville.naxcraft.admin.SuperManager;
+import com.naxville.naxcraft.admin.VirtualChest;
 
-public class AtmManager 
+public class AtmManager
 {
 	public Naxcraft plugin;
 	public List<Atm> atms = new ArrayList<Atm>();
 	public List<String> ids = new ArrayList<String>();
 	
-	public Map<Player, TileEntityVirtualChest> openAtms = new HashMap<Player, TileEntityVirtualChest>();
+	public Map<Player, VirtualChest> openAtms = new HashMap<Player, VirtualChest>();
 	
-	public NaxcraftConfiguration config;
+	public NaxFile config;
 	
-	public static final int ATM_COST = 64;
+	public static final int ATM_COST = 32;
 	public static final Material ATM_MATERIAL_COST = Material.GOLD_INGOT;
-	public static final String FILE_NAME = "ATM_Data";
+	public static final String FILE_NAME = "atms";
 	
 	public AtmManager(Naxcraft plugin)
 	{
@@ -51,18 +53,17 @@ public class AtmManager
 	
 	public void handleBlockBreak(BlockBreakEvent event)
 	{
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		
-		if(event.getBlock().getType() != Material.CHEST && event.getBlock().getType() != Material.WALL_SIGN)
-			return;
+		if (event.getBlock().getType() != Material.CHEST && event.getBlock().getType() != Material.WALL_SIGN) return;
 		
 		Block block = event.getBlock();
 		
-		if(block.getType() == Material.WALL_SIGN)
+		if (block.getType() == Material.WALL_SIGN)
 		{
 			Atm atm = getAtmFromChest(block.getRelative(BlockFace.DOWN));
 			
-			if(atm != null)
+			if (atm != null)
 			{
 				event.setCancelled(true);
 				event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot remove this ATM sign unless the ATM is removed.");
@@ -72,7 +73,7 @@ public class AtmManager
 		{
 			Atm atm = getAtmFromChest(block);
 			
-			if(atm != null)
+			if (atm != null)
 			{
 				removeAtm(atm);
 				event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You have successfully removed this ATM.");
@@ -82,22 +83,23 @@ public class AtmManager
 	
 	public void handleBlockPlace(BlockPlaceEvent event)
 	{
-		if(event.isCancelled()) return;
+		if (event.isCancelled()) return;
 		
-		if(event.getBlock().getType() == Material.CHEST)
+		if (event.getBlock().getType() == Material.CHEST)
 		{
-			double x = event.getBlockAgainst().getLocation().getX();
-			double z = event.getBlockAgainst().getLocation().getZ();
+			double x = event.getBlock().getLocation().getX();
+			double z = event.getBlock().getLocation().getZ();
 			
-			for(Atm atm : atms)
+			for (Atm atm : atms)
 			{
 				double xa = atm.location.getX();
 				double za = atm.location.getZ();
 				
-				if(x <= xa + 1 && x >= xa - 1)
+				if (x <= xa + 1 && x >= xa - 1)
 				{
-					if(z <= za + 1 && z >= za - 1)
+					if (z <= za + 1 && z >= za - 1)
 					{
+						event.getPlayer().sendMessage(NaxColor.MSG + "ATMs can only be a single chest.");
 						event.setCancelled(true);
 					}
 				}
@@ -107,143 +109,97 @@ public class AtmManager
 	
 	public void handlePlayerInteract(PlayerInteractEvent event)
 	{
-		if(event.isCancelled()) return;
-		
-		if(event.getAction() == Action.RIGHT_CLICK_BLOCK)
+		if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null && event.getClickedBlock().getType() == Material.CHEST)
 		{
-			if(event.getClickedBlock() != null)
+			Block block = event.getClickedBlock();
+			Atm atm = getAtmFromChest(block);
+			
+			if (atm == null)
 			{
-				Block block = event.getClickedBlock();
-				
-				if(block.getType() == Material.CHEST)
+				if (block.getRelative(BlockFace.UP).getType() == Material.WALL_SIGN)
 				{
-					Atm atm = getAtmFromChest(block);
+					Sign sign = (Sign) block.getRelative(BlockFace.UP).getState();
 					
-					if(atm == null)
+					if (sign.getLine(1).equalsIgnoreCase("[ATM]"))
 					{
-						if(block.getRelative(BlockFace.UP).getType() == Material.WALL_SIGN)
+						boolean singleChest = true;
+						event.setCancelled(true);
+						
+						for (int x = -1; x < 2; x++)
 						{
-							Sign sign = (Sign) block.getRelative(BlockFace.UP).getState();
-							
-							if(sign.getLine(1).equalsIgnoreCase("[ATM]"))
+							for (int z = -1; z < 2; z++)
 							{
-								boolean singleChest = true;
-								event.setCancelled(true);
+								if (x == 0 && z == 0) continue;
 								
-								for(int x = -1; x < 2; x++)
+								if (block.getRelative(x, 0, z).getType() == Material.CHEST)
 								{
-									for(int z = -1; z < 2; z++)
-									{
-										if(x == 0 && z == 0) continue;
-										
-										if(block.getRelative(x, 0, z).getType() == Material.CHEST)
-										{
-											singleChest = false;
-										}
-									}
-								}
-								
-								if(singleChest)
-								{									
-									if(charge(event.getPlayer(), ATM_MATERIAL_COST, ATM_COST))
-									{
-										addAtm(event.getPlayer(), block);
-										sign.setLine(1, ChatColor.DARK_PURPLE + "[ATM]");
-										sign.update();
-										
-										CraftChest chest = (CraftChest)block.getState();
-										
-										for(ItemStack stack : chest.getInventory().getContents())
-										{
-											chest.getWorld().dropItemNaturally(event.getPlayer().getLocation(), stack);
-										}
-										
-										event.getPlayer().sendMessage(Naxcraft.SUCCESS_COLOR + "You successfully activated this ATM for " + Naxcraft.DEFAULT_COLOR + ATM_COST + " " + getMaterialName(ATM_MATERIAL_COST) + "s" + Naxcraft.SUCCESS_COLOR + ".");
-									}
-									else
-									{
-										event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You can activate this ATM for " + Naxcraft.DEFAULT_COLOR + ATM_COST + " " + getMaterialName(ATM_MATERIAL_COST) + "s" + Naxcraft.MSG_COLOR + ".");
-									}
-								}
-								else
-								{
-									event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot have a large chest for an ATM.");
+									singleChest = false;
 								}
 							}
 						}
+						
+						if (singleChest)
+						{
+							if (NaxUtil.charge(event.getPlayer(), ATM_MATERIAL_COST, ATM_COST))
+							{
+								addAtm(event.getPlayer(), block);
+								sign.setLine(1, ChatColor.DARK_PURPLE + "[ATM]");
+								sign.update();
+								
+								Chest chest = (Chest) event.getClickedBlock().getState();
+								
+								for (ItemStack stack : chest.getInventory().getContents())
+								{
+									if (stack == null || stack.getAmount() == 0) continue;
+									
+									chest.getWorld().dropItemNaturally(event.getPlayer().getLocation(), stack);
+								}
+								
+								event.getPlayer().sendMessage(Naxcraft.SUCCESS_COLOR + "You successfully activated this ATM for " + Naxcraft.DEFAULT_COLOR + ATM_COST + " " + getMaterialName(ATM_MATERIAL_COST) + "s" + Naxcraft.SUCCESS_COLOR + ".");
+							}
+							else
+							{
+								event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You can activate this ATM for " + Naxcraft.DEFAULT_COLOR + ATM_COST + " " + getMaterialName(ATM_MATERIAL_COST) + "s" + Naxcraft.MSG_COLOR + ".");
+							}
+						}
+						else
+						{
+							event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "You cannot have a large chest for an ATM.");
+						}
 					}
-					else
-					{
-						event.setCancelled(true);
-						accessAtm(event.getPlayer(), atm);
-					}
+				}
+			}
+			else
+			{
+				event.setCancelled(true);
+				
+				if (event.getPlayer().getGameMode() == GameMode.CREATIVE && !SuperManager.isSuper(event.getPlayer()))
+				{
+					event.getPlayer().sendMessage(NaxColor.MSG + "You cannot use ATMs in creative mode.");
+				}
+				else
+				{
+					accessAtm(event.getPlayer(), atm);
 				}
 			}
 		}
 	}
 	
-	public String getMaterialName(Material mat)
+	private String getMaterialName(Material mat)
 	{
 		return mat.toString().toLowerCase().replace("_", " ");
 	}
 	
 	public Atm getAtmFromChest(Block block)
 	{
-		if(block.getType() != Material.CHEST)
-			return null;
+		if (block.getType() != Material.CHEST) return null;
 		
-		for(Atm atm : atms)
+		for (Atm atm : atms)
 		{
-			if(block.getLocation().getWorld().getName() == atm.location.getWorld().getName() &&
-					block.getLocation().getX() == atm.location.getX() &&
-					block.getLocation().getY() == atm.location.getY() &&
-					block.getLocation().getZ() == atm.location.getZ())
-			{
-				return atm;
-			}
+			if (block.getLocation().equals(atm.location)) return atm;
 		}
 		
 		return null;
-	}
-	
-	public boolean charge(Player player, Material material, int cost)
-	{		
-		int priceleft = cost;
-		List<Integer> slotsToDestroy = new ArrayList<Integer>();
-		
-		boolean enoughMoney = false;
-		
-		for(int slot : player.getInventory().all(material).keySet())
-		{
-			priceleft -= player.getInventory().getItem(slot).getAmount();
-			if(priceleft > 0) 
-			{
-				slotsToDestroy.add(slot);
-			} 
-			else if(priceleft == 0) 
-			{
-				slotsToDestroy.add(slot);
-				enoughMoney = true;
-				break;
-			} 
-			else if(priceleft < 0) 
-			{
-				slotsToDestroy.add(slot);
-				enoughMoney = true;
-				break;
-			}
-		}
-		
-		if(enoughMoney){
-			for(int slot : slotsToDestroy){
-				player.getInventory().setItem(slot, null);
-			}
-			if(priceleft < 0){
-				player.getInventory().addItem(new ItemStack(material, priceleft*-1));
-			}		
-		}
-		
-		return enoughMoney;
 	}
 	
 	public void addAtm(Player player, Block block)
@@ -256,8 +212,8 @@ public class AtmManager
 	
 	public void accessAtm(Player player, Atm atm)
 	{
-		TileEntityVirtualChest chest = accessAccount(player);
-		EntityPlayer eh = ((CraftPlayer)player).getHandle();
+		VirtualChest chest = accessAccount(player);
+		EntityPlayer eh = ((CraftPlayer) player).getHandle();
 		
 		openAtms.put(player, chest);
 		plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new AtmChecker(player, plugin, this, atm.owner), 5);
@@ -265,11 +221,11 @@ public class AtmManager
 		eh.a(chest);
 	}
 	
-	public TileEntityVirtualChest accessAccount(Player player)
+	public VirtualChest accessAccount(Player player)
 	{
-		List<String> slots = config.getKeys("accounts." + player.getName());
+		Set<String> slots = config.getKeys("accounts." + player.getName() + "." + player.getWorld().getName());
 		
-		if(slots == null || slots.isEmpty())
+		if (slots == null)
 		{
 			return createAccount(player);
 		}
@@ -279,25 +235,15 @@ public class AtmManager
 		}
 	}
 	
-	public TileEntityVirtualChest loadAccount(Player player, List<String> slots)
+	public VirtualChest loadAccount(Player player, Set<String> slots)
 	{
-		TileEntityVirtualChest chest = new TileEntityVirtualChest();
+		VirtualChest chest = new VirtualChest();
 		
-		for(String slot : slots)
+		for (String slot : slots)
 		{
-			String prefix = "accounts." + player.getName() + "." + slot;
+			String prefix = "accounts." + player.getName() + "." + player.getWorld().getName() + "." + slot;
 			
-			if(config.getString(prefix + ".type").equals("0"))
-			{
-				continue;
-			}
-			
-			ItemStack stack = new ItemStack
-			(
-				Integer.parseInt(config.getString(prefix + ".type")),
-				Integer.parseInt(config.getString(prefix + ".amount")),
-				Short.parseShort(config.getString(prefix + ".damage"))
-			);
+			ItemStack stack = config.getItemStack(prefix);
 			
 			chest.addItem(Integer.parseInt(slot), stack);
 		}
@@ -305,9 +251,9 @@ public class AtmManager
 		return chest;
 	}
 	
-	public TileEntityVirtualChest createAccount(Player player)
-	{			
-		TileEntityVirtualChest chest = new TileEntityVirtualChest();
+	public VirtualChest createAccount(Player player)
+	{
+		VirtualChest chest = new VirtualChest();
 		chest.addItem(0, new ItemStack(Material.COOKIE.getId(), 8));
 		
 		saveAccount(player, chest);
@@ -317,9 +263,9 @@ public class AtmManager
 	
 	public String getNewID(String owner)
 	{
-		for(int i = 0; i < 1000; i++)
+		for (int i = 0; i < 1000; i++)
 		{
-			if(!ids.contains(owner + "_" + i))
+			if (!ids.contains(owner + "_" + i))
 			{
 				ids.add(owner + "_" + i);
 				return owner + "_" + i;
@@ -331,39 +277,9 @@ public class AtmManager
 	
 	public void loadFile()
 	{
-		File file = new File(plugin.filePath + FILE_NAME + ".yml");
-		try
-		{
-			if(!file.exists())
-			{
-				file.createNewFile();
-				initializeFile(file);
-			}
-		}
-		catch(IOException e)
-		{
-			System.out.println("Error creating new " + FILE_NAME + " file.");
-			e.printStackTrace();
-		}
+		config = new NaxFile(plugin, "atms");
 		
-		config = new NaxcraftConfiguration(file);
-		config.load();
-	}
-	
-	public void initializeFile(File file)
-	{
-		try
-		{
-			BufferedWriter output = new BufferedWriter(new FileWriter(file));
-			output.write("atms: {}\n");
-			output.write("accounts: {}");
-			output.close();
-		}
-		catch(IOException e)
-		{
-			System.out.println("Error initializing " + FILE_NAME + ".");
-			e.printStackTrace();
-		}
+		config.addDefault("acounts", "");
 	}
 	
 	public void loadAtms()
@@ -372,18 +288,19 @@ public class AtmManager
 		
 		try
 		{
-			List<String> keys = config.getKeys("atms");
+			Set<String> keys = config.getKeys("atms");
 			
-			for(String key : keys)
+			for (String key : keys)
 			{
 				String prefix = "atms." + key;
-				Location loc = new Location
-				(
-					plugin.getServer().getWorld(config.getString(prefix + ".world")),
-					Double.parseDouble(config.getString(prefix + ".x")),
-					Double.parseDouble(config.getString(prefix + ".y")),
-					Double.parseDouble(config.getString(prefix + ".z"))
-				);
+				
+				if (!config.contains(prefix + ".world")) continue;
+				
+				World world = plugin.getServer().getWorld(config.getString(prefix + ".world"));
+				
+				if (world == null) continue;
+				
+				Location loc = config.getLocation(prefix);
 				
 				String owner = config.getString(prefix + ".owner");
 				
@@ -391,8 +308,10 @@ public class AtmManager
 				Atm atm = new Atm(key, owner, loc);
 				atms.add(atm);
 			}
+			
+			// /updateAccounts();
 		}
-		catch(Exception e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
@@ -404,42 +323,33 @@ public class AtmManager
 		openAtms.remove(player);
 	}
 	
-	public void saveAccount(Player player, TileEntityVirtualChest chest)
+	public void saveAccount(Player player, VirtualChest chest)
 	{
-		int i = 0;
+		config.set("accounts." + player.getName() + "." + player.getWorld().getName(), "");
 		
-		for(net.minecraft.server.ItemStack item : chest.getContents())
-		{			
-			String prefix = "accounts." + player.getName() + "." + i;
-			
-			if(item == null)
+		if (chest != null)
+		{
+			for (int i = 0; i < chest.getContents().length; i++)
 			{
-				config.setProperty(prefix + ".type", 0);
-				config.setProperty(prefix + ".amount", 0);
-				config.setProperty(prefix + ".damage", 0);
+				net.minecraft.server.ItemStack mcItem = chest.getContents()[i];
+				
+				if (mcItem == null) continue;
+				
+				ItemStack item = new ItemStack(mcItem.id, mcItem.count, (short) mcItem.getData());
+				
+				String prefix = "accounts." + player.getName() + "." + player.getWorld().getName() + "." + i;
+				config.setItemStack(prefix, item);
 			}
-			else
-			{
-				config.setProperty(prefix + ".type", item.id);
-				config.setProperty(prefix + ".amount", item.count);
-				config.setProperty(prefix + ".damage", item.damage);
-			}
-			
-			i++;
 		}
 		
 		config.save();
 	}
 	
 	public void saveAtm(Atm atm)
-	{		
+	{
 		String prefix = "atms." + atm.id;
-		
-		config.setProperty(prefix + ".world", atm.world.getName());
-		config.setProperty(prefix + ".x", atm.location.getX());
-		config.setProperty(prefix + ".y", atm.location.getY());
-		config.setProperty(prefix + ".z", atm.location.getZ());
-		config.setProperty(prefix + ".owner", atm.owner);
+		config.setLocation(prefix, atm.location);
+		config.set(prefix + ".owner", atm.owner);
 		
 		config.save();
 	}
@@ -448,7 +358,7 @@ public class AtmManager
 	{
 		atms.remove(atm);
 		
-		Sign sign = (Sign)atm.world.getBlockAt(atm.location.getBlockX(), atm.location.getBlockY() + 1, atm.location.getBlockZ());
+		Sign sign = (Sign) atm.world.getBlockAt(atm.location.getBlockX(), atm.location.getBlockY() + 1, atm.location.getBlockZ()).getState();
 		sign.setLine(1, "[Deleted ATM]");
 		sign.update();
 		
