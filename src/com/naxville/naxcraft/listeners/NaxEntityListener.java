@@ -28,8 +28,13 @@ import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.ItemDespawnEvent;
+import org.bukkit.event.painting.PaintingBreakByEntityEvent;
+import org.bukkit.event.painting.PaintingBreakEvent;
+import org.bukkit.event.painting.PaintingBreakEvent.RemoveCause;
+import org.bukkit.event.painting.PaintingPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 
+import com.naxville.naxcraft.NaxColor;
 import com.naxville.naxcraft.Naxcraft;
 import com.naxville.naxcraft.autoareas.AutoAreaManager.Flag;
 import com.naxville.naxcraft.autoareas.AutoBase;
@@ -59,6 +64,42 @@ public class NaxEntityListener implements Listener
 	public void onItemDespawn(ItemDespawnEvent event)
 	{
 		plugin.displayShopManager.handleItemDespawn(event);
+	}
+	
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onPaintingBreak(PaintingBreakEvent event)
+	{
+		if(event.getCause() == RemoveCause.ENTITY)
+		{
+			Entity remover = ((PaintingBreakByEntityEvent)event).getRemover();
+			
+			AutoBase base = plugin.autoAreaManager.getBase(event.getPainting().getLocation());
+			
+			if(base == null) return;
+			
+			if(remover instanceof Player)
+			{
+				if(!base.isOwner((Player)remover))
+				{
+					((Player)remover).sendMessage(NaxColor.MSG + "You may not edit protected paintings.");
+					event.setCancelled(true);
+				}
+			}
+		}
+	}
+	
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onPaintingPlace(PaintingPlaceEvent event)
+	{
+		AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
+		
+		if(base == null) return;
+		
+		if(!base.isOwner(event.getPlayer()))
+		{
+			event.getPlayer().sendMessage(NaxColor.MSG + "You may not place paintings in this area.");
+			event.setCancelled(true);
+		}
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)

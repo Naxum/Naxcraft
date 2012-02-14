@@ -20,11 +20,13 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -103,6 +105,26 @@ public class NaxPlayerListener implements Listener
 		
 		event.getPlayer().setDisplayName(plugin.getNickName(event.getPlayer().getName().toLowerCase()));
 		
+	}
+	
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onPlayerLevelChange(PlayerLevelChangeEvent event)
+	{
+		if(event.getNewLevel() % 5 == 0 && event.getNewLevel() != 0)
+		{
+			plugin.announcer.announce(plugin.getNickName(event.getPlayer()) + " has reached level " + NaxColor.LEVEL + event.getNewLevel() + NaxColor.MSG + "!");
+		}
+	}
+	
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onPlayerShearEntity(PlayerShearEntityEvent event)
+	{
+		Player p = event.getPlayer();
+		
+		if(p.getGameMode() == GameMode.CREATIVE && !SuperManager.isSuper(p))
+		{
+			event.setCancelled(true);
+		}
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
