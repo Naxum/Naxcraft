@@ -50,6 +50,18 @@ public class NaxPlayer
 			resave = true;
 		}
 		
+		if(homes == null)
+		{
+			resave = true;
+			homes = new HashMap<String, Location>();
+		}
+		
+		if(rank == null)
+		{
+			rank = PlayerRank.NOOB;
+			resave = true;
+		}
+		
 		if (resave)
 		{
 			save();

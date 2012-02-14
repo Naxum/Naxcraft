@@ -53,7 +53,7 @@ import com.naxville.naxcraft.listeners.NaxBlockListener;
 import com.naxville.naxcraft.listeners.NaxEntityListener;
 import com.naxville.naxcraft.listeners.NaxInventoryListener;
 import com.naxville.naxcraft.listeners.NaxPlayerListener;
-import com.naxville.naxcraft.listeners.NaxcraftVehicleListener;
+import com.naxville.naxcraft.listeners.NaxVehicleListener;
 import com.naxville.naxcraft.mail.MailManager;
 import com.naxville.naxcraft.player.BackCommand;
 import com.naxville.naxcraft.player.FireWatcher;
@@ -74,7 +74,7 @@ public class Naxcraft extends JavaPlugin
 	protected final NaxPlayerListener playerListener = new NaxPlayerListener(this);
 	protected final NaxBlockListener blockListener = new NaxBlockListener(this);
 	protected final NaxInventoryListener inventoryListener = new NaxInventoryListener(this);
-	public final NaxcraftVehicleListener vehicleListener = new NaxcraftVehicleListener(this);
+	public final NaxVehicleListener vehicleListener = new NaxVehicleListener(this);
 	
 	// announcer
 	public final Announcer announcer = new Announcer(this);

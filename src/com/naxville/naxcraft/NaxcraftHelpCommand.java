@@ -35,6 +35,7 @@ public class NaxcraftHelpCommand
 		{
 			PluginManager manager = plugin.getServer().getPluginManager();
 			
+			/*
 			if (plugin.playerManager.getPlayer((Player) sender).rank.isAdmin())
 			{
 				for (int i = 0; i < manager.getPlugins().length; i++)
@@ -46,6 +47,9 @@ public class NaxcraftHelpCommand
 			{
 				commands.addAll(PluginCommandYamlParser.parse(manager.getPlugin("Naxcraft")));
 			}
+			*/
+			
+			commands.addAll(PluginCommandYamlParser.parse(manager.getPlugin("Naxcraft")));
 			
 			this.init = 1;
 		}

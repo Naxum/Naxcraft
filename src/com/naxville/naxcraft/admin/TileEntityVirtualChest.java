@@ -11,7 +11,7 @@ public class TileEntityVirtualChest extends TileEntityChest {
 	}
 
 	@Override
-	public boolean a_(EntityHuman entityhuman) {
+	public boolean a(EntityHuman entityhuman) {
 		/*
 		 * For this proof of concept, we ALWAYS validate the chest.
 		 * This behavior has not been thoroughly tested, and may cause unexpected results depending on the state of the player.
