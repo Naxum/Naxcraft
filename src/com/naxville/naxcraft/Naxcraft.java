@@ -16,7 +16,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldCreator;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -42,6 +41,7 @@ import com.naxville.naxcraft.admin.NaxcraftStrikeCommand;
 import com.naxville.naxcraft.admin.NaxcraftTimeCommand;
 import com.naxville.naxcraft.admin.NaxcraftWarpgate;
 import com.naxville.naxcraft.admin.NaxcraftWeatherCommand;
+import com.naxville.naxcraft.admin.PotionCommand;
 import com.naxville.naxcraft.admin.SuperManager;
 import com.naxville.naxcraft.admin.TitleCommand;
 import com.naxville.naxcraft.atms.AtmManager;
@@ -211,6 +211,7 @@ public class Naxcraft extends JavaPlugin
 		
 		getCommand("title").setExecutor(new TitleCommand(this));
 		getCommand("titles").setExecutor(new TitlesCommand(this));
+		getCommand("potion").setExecutor(new PotionCommand(this));
 		
 		log.info(pdfFile.getName() + " version " + pdfFile.getVersion() + " is ready to rock!");
 	}
@@ -613,7 +614,7 @@ public class Naxcraft extends JavaPlugin
 	private void loadFiles()
 	{
 		// getServer().createWorld("old_naxville", Environment.NORMAL);
-		getServer().createWorld(new WorldCreator("naxville"));
+		//getServer().createWorld(new WorldCreator("naxville"));
 		// getServer().createWorld(new WorldCreator("galingale"));
 		
 		if (!shopManager.loadShops()) this.log.log(Level.SEVERE, "Naxcraft Startup: Error loading shops.");

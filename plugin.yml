@@ -45,6 +45,11 @@ commands:
     usage: |
            /<command>
            
+  potion:
+    description: Gives you potion effects.
+    usage: |
+           /<command>
+           
   stats:
     description: Shows the server stats.
     usage: |

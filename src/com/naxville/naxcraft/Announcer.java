@@ -97,7 +97,12 @@ public class Announcer
 		
 		String middleText = "", cause = "";
 		
-		if (event instanceof EntityDamageByEntityEvent)
+		if(event == null || event.getCause() == null)
+		{
+			middleText = "was";
+			cause = "sacrificed to the gods!";
+		}
+		else if (event instanceof EntityDamageByEntityEvent)
 		{
 			EntityDamageByEntityEvent ev = (EntityDamageByEntityEvent) event;
 			Entity e = ev.getDamager();
