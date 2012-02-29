@@ -17,19 +17,19 @@ public class NaxPlayer
 	private Naxcraft plugin;
 	public String name;
 	public PlayerRank rank;
-	public String displayName;
+	private int color = -1;
 	public Map<String, Location> homes = new HashMap<String, Location>();
 	public String setHome;
 	public List<String> ignored;
 	public List<Title> titles;
 	public List<Title> hiddenTitles;
 	
-	public NaxPlayer(Naxcraft plugin, String name, PlayerRank rank, String displayName, Map<String, Location> homes, String setHome, List<String> ignored, List<Title> titles, List<Title> hiddenTitles)
+	public NaxPlayer(Naxcraft plugin, String name, PlayerRank rank, int color, Map<String, Location> homes, String setHome, List<String> ignored, List<Title> titles, List<Title> hiddenTitles)
 	{
 		this.plugin = plugin;
 		this.name = name;
 		this.rank = rank;
-		this.displayName = displayName;
+		this.color = color;
 		this.homes = homes;
 		this.setHome = setHome;
 		this.ignored = ignored;
@@ -143,8 +143,8 @@ public class NaxPlayer
 	public String getChatName()
 	{
 		if (rank == null) System.out.println("Rank is null for NaxPlayer: " + name);
-		if (displayName == null) return rank.getPrefix() + NaxColor.WHITE + name;
-		return rank.getPrefix() + displayName;
+		if (color == -1) return rank.getPrefix() + NaxColor.WHITE + name + NaxColor.MSG;
+		return rank.getPrefix() + Naxcraft.COLORS[color] + name + NaxColor.MSG;
 	}
 	
 	public List<Title> getTitles()
@@ -156,6 +156,16 @@ public class NaxPlayer
 		}
 		
 		return titles;
+	}
+
+	public void setColor(int color)
+	{
+		this.color = color;
+	}
+
+	public int getColor()
+	{
+		return color;
 	}
 	
 }

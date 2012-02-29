@@ -54,7 +54,7 @@ public class TitleCommand extends NaxCommand
 			
 			plugin.playerManager.savePlayer(np);
 			
-			plugin.announcer.announce(np.rank.getPrefix() + np.displayName + " has had all of their titles stripped.");
+			plugin.announcer.announce(np.getChatName() + " has had all of their titles stripped.");
 		}
 		else if (args.length == 3 && (args[0].equalsIgnoreCase("give") || args[0].equalsIgnoreCase("add"))) // title [give, name, title]
 		{
@@ -84,7 +84,7 @@ public class TitleCommand extends NaxCommand
 			np.titles.add(t);
 			plugin.playerManager.savePlayer(np);
 			
-			plugin.announcer.announce(np.rank.getPrefix() + np.displayName + " has been awarded the " + t.getName() + " title!");
+			plugin.announcer.announce(np.getChatName() + " has been awarded the " + t.getName() + " title!");
 		}
 		else if (args.length == 3 && args[0].equalsIgnoreCase("remove"))
 		{
@@ -115,7 +115,7 @@ public class TitleCommand extends NaxCommand
 			np.hiddenTitles.remove(t);
 			plugin.playerManager.savePlayer(np);
 			
-			plugin.announcer.announce(np.rank.getPrefix() + np.displayName + " has had their " + t.getName() + " title removed.");
+			plugin.announcer.announce(np.getChatName() + " has had their " + t.getName() + " title removed.");
 		}
 		else
 		{

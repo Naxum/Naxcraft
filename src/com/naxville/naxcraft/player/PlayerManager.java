@@ -256,30 +256,12 @@ public class PlayerManager
 	
 	public String getDisplayName(NaxPlayer p, Player player)
 	{
-		if (p == null)
-		{
-			return Naxcraft.DEFAULT_COLOR + player.getName() + Naxcraft.MSG_COLOR;
-		}
-		else if (p.displayName == null || p.displayName == "")
-		{
-			return p.rank.getPrefix() + Naxcraft.DEFAULT_COLOR + p.name + Naxcraft.MSG_COLOR;
-		}
-		else
-		{
-			return p.rank.getPrefix() + p.displayName + Naxcraft.MSG_COLOR;
-		}
+		return p.getChatName();
 	}
 	
 	public String getDisplayName(NaxPlayer p)
 	{
-		if (p.displayName == null)
-		{
-			return p.rank.getPrefix() + Naxcraft.DEFAULT_COLOR + p.name + Naxcraft.MSG_COLOR;
-		}
-		else
-		{
-			return p.rank.getPrefix() + p.displayName + Naxcraft.MSG_COLOR;
-		}
+		return p.getChatName();
 	}
 	
 	public NaxPlayer getPlayer(OfflinePlayer player)
@@ -816,7 +798,7 @@ public class PlayerManager
 			}
 			
 			p.sendMessage(NaxColor.MSG + "----");
-			p.sendMessage(NaxColor.COMMAND + "/stats for " + np.displayName);
+			p.sendMessage(NaxColor.COMMAND + "/stats for " + np.getChatName());
 			p.sendMessage(NaxColor.MSG + "Joined " + NaxColor.WHITE + started);
 			p.sendMessage(NaxColor.MSG + "Last played " + NaxColor.WHITE + last);
 			if (extras != "") p.sendMessage(NaxColor.MSG + extras);
@@ -904,8 +886,15 @@ public class PlayerManager
 			String prefix = "players." + key;
 			
 			if (config.getString(prefix + ".rank") == null) continue;
-			
-			String displayName = config.getString(prefix + ".displayName");
+			int color = -1;
+			if(!config.isConfigurationSection(prefix+".color"))
+			{
+				color = -1;
+			}
+			else
+			{
+				color = config.getInt(prefix + ".color");
+			}
 			PlayerRank rank = PlayerRank.getRank(config.getString(prefix + ".rank"));
 			
 			Set<String> homes = config.getKeys(prefix + ".homes");
@@ -994,7 +983,7 @@ public class PlayerManager
 				}
 			}
 			
-			NaxPlayer np = new NaxPlayer(plugin, key, rank, displayName, homesList, setHome, ignored, titles, hiddenTitles);
+			NaxPlayer np = new NaxPlayer(plugin, key, rank, color, homesList, setHome, ignored, titles, hiddenTitles);
 			
 			if (resave)
 			{
@@ -1007,18 +996,18 @@ public class PlayerManager
 	
 	public NaxPlayer createNaxPlayer(Player p)
 	{
-		NaxPlayer np = new NaxPlayer(plugin, p.getName(), PlayerRank.getRank(0), null, null, "", null, null, null);
+		NaxPlayer np = new NaxPlayer(plugin, p.getName(), PlayerRank.getRank(0), -1, null, "", null, null, null);
 		players.add(np);
 		savePlayer(np);
 		
 		return np;
 	}
 	
-	public void setDisplayName(Player player, ChatColor color)
+	public void setDisplayName(Player player, int color)
 	{
 		NaxPlayer p = getPlayer(player);
 		
-		p.displayName = color + p.name + Naxcraft.MSG_COLOR;
+		p.setColor(color);
 		savePlayer(p);
 	}
 	
@@ -1034,10 +1023,7 @@ public class PlayerManager
 		
 		config.setProperty(prefix + ".rank", p.rank.name());
 		
-		if (p.displayName != null)
-		{
-			config.setProperty(prefix + ".displayName", p.displayName);
-		}
+		config.setProperty(prefix + ".color", p.getColor());
 		
 		int j = 0;
 		if (p.ignored != null && !p.ignored.isEmpty())

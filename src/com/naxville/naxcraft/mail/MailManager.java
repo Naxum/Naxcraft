@@ -626,6 +626,8 @@ public class MailManager
 				String title = id;
 				String mPrefix = prefix + "." + id;
 				
+				if(!config.isConfigurationSection(prefix + ".sentWorld")) continue;
+				
 				boolean read = config.getBoolean(mPrefix + ".read");
 				String text = config.getString(mPrefix + ".text");
 				String sender = config.getString(mPrefix + ".sender");

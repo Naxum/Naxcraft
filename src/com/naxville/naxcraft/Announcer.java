@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.logging.Level;
 
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -50,7 +51,7 @@ public class Announcer
 			player.sendMessage(str);
 		}
 		
-		System.out.println(str);
+		plugin.getLogger().log(Level.INFO, str);
 	}
 	
 	public void announceToOtherWorlds(String str, World world)
@@ -68,7 +69,7 @@ public class Announcer
 			}
 		}
 		
-		System.out.println(str);
+		plugin.getLogger().log(Level.INFO, str);
 	}
 	
 	public void handleEntityDeath(EntityDeathEvent event)

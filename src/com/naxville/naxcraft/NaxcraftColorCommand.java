@@ -75,7 +75,7 @@ public class NaxcraftColorCommand
 					))
 			{
 				player.setDisplayName(Naxcraft.COLORS[color] + player.getName() + Naxcraft.MSG_COLOR);
-				plugin.playerManager.setDisplayName(player, Naxcraft.COLORS[color]);
+				plugin.playerManager.setDisplayName(player, color);
 				player.sendMessage((Naxcraft.COMMAND_COLOR + "Your display color is now " + Naxcraft.COLORS[color] + color));
 			}
 			else

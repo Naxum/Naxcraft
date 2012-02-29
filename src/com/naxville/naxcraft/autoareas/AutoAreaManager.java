@@ -1538,7 +1538,7 @@ public class AutoAreaManager
 		}
 		else
 		{
-			s = p.displayName;
+			s = p.getChatName();
 			clean = p.name;
 		}
 		

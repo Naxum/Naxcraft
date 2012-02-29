@@ -47,7 +47,7 @@ public class Shop
 		this.location = location;
 		this.world = location.getWorld();
 		
-		this.line1 = lines[0];
+		this.line1 = "Buy";
 		this.line2 = lines[1];
 		this.line3 = lines[2];
 		this.line4 = lines[3];

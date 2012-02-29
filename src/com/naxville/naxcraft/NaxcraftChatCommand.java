@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -43,6 +44,14 @@ public class NaxcraftChatCommand
 		if (!(sender instanceof Player)) { return true; }
 		Player player = (Player) sender;
 		
+		for(String s : args)
+		{
+			for(ChatColor c : Naxcraft.COLORS)
+			{
+				s.replaceAll(c + "", "");
+			}
+		}
+		
 		if (commandLabel.equalsIgnoreCase("list"))
 		{
 			getList(player);
@@ -80,7 +89,7 @@ public class NaxcraftChatCommand
 				String message = parseMessage(player, NaxUtil.arrayToString(args));
 				player.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(player.getName()) + NaxColor.MSG + " -> " + p.getDisplayName() + NaxColor.MSG + "> " + message);
 				p.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(p.getName()) + NaxColor.MSG + " <- " + plugin.getNickName(player.getName()) + NaxColor.WHITE + "> " + message);
-				plugin.log.info("MSG: " + player.getName() + " -> " + p.getName() + ": " + message);
+				plugin.log.info(NaxColor.MSG + "<" + plugin.getNickName(player.getName()) + NaxColor.MSG + " -> " + p.getDisplayName() + NaxColor.MSG + "> " + message);
 				playerWhisper.put(player, p);
 				return true;
 			}
@@ -110,7 +119,7 @@ public class NaxcraftChatCommand
 			String message = parseMessage(player, NaxUtil.arrayToString(args));
 			player.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(player.getName()) + NaxColor.MSG + " -> " + p.getDisplayName() + NaxColor.MSG + "> " + message);
 			p.sendMessage(NaxColor.MSG + "<" + plugin.getNickName(p.getName()) + NaxColor.MSG + " <- " + plugin.getNickName(player.getName()) + NaxColor.WHITE + "> " + message);
-			if (args.length > 0) plugin.log.info("MSG: " + player.getName() + " -> " + p.getName() + ": " + message);
+			if (args.length > 0) plugin.log.info(NaxColor.MSG + "<" + plugin.getNickName(player.getName()) + NaxColor.MSG + " -> " + p.getDisplayName() + NaxColor.MSG + "> " + message);
 			playerWhisper.put(player, p);
 			return true;
 			
@@ -256,7 +265,7 @@ public class NaxcraftChatCommand
 				{
 					p.sendMessage(NaxColor.MSG + "[" + color + plugin.getWorldName(player.getWorld()) + NaxColor.MSG + "] " + color + "<" + plugin.getNickName(player.getName()) + color + "> " + NaxColor.WHITE + message);
 				}
-				plugin.log.info("M: [" + plugin.getWorldName(player.getWorld()) + "] " + player.getName() + ": " + message);
+				plugin.log.info(NaxColor.MSG + "[" + color + plugin.getWorldName(player.getWorld()) + NaxColor.MSG + "] " + color + "<" + plugin.getNickName(player.getName()) + color + "> " + NaxColor.WHITE + message);
 				break;
 			case GENERAL:
 				List<Player> global = plugin.playerManager.handlePlayerChat(player, getGlobalPlayers(player));
@@ -270,7 +279,7 @@ public class NaxcraftChatCommand
 				{
 					p.sendMessage(plugin.getTitles(player) + NaxColor.WHITE + "<" + plugin.getNickName(player) + NaxColor.WHITE + ">" + NaxColor.WHITE + CHAT_SEPERATOR + message);
 				}
-				plugin.log.info("G: " + player.getName() + ": " + message);
+				plugin.log.info(plugin.getTitles(player) + NaxColor.WHITE + "<" + plugin.getNickName(player) + NaxColor.WHITE + ">" + NaxColor.WHITE + CHAT_SEPERATOR + message);
 				break;
 			case LOCAL:
 				List<Player> local = plugin.playerManager.handlePlayerChat(player, getLocalPlayers(player));
@@ -286,7 +295,7 @@ public class NaxcraftChatCommand
 				{
 					p.sendMessage(NaxColor.LOCAL + "[L " + NaxColor.WHITE + visibleLocalPlayers + NaxColor.LOCAL + "] <" + plugin.getNickName(player.getName()) + NaxColor.LOCAL + ">" + NaxColor.WHITE + CHAT_SEPERATOR + message);
 				}
-				plugin.log.info("Local: [L " + visibleLocalPlayers + "] " + player.getName() + ": " + message);
+				plugin.log.info(NaxColor.LOCAL + "[L " + NaxColor.WHITE + visibleLocalPlayers + NaxColor.LOCAL + "] <" + plugin.getNickName(player.getName()) + NaxColor.LOCAL + ">" + NaxColor.WHITE + CHAT_SEPERATOR + message);
 				break;
 		}
 	}
@@ -468,8 +477,6 @@ public class NaxcraftChatCommand
 		
 		for (int start : counts)
 		{
-			System.out.println("Checking!");
-			
 			int i = 1;
 			
 			while (start + i < str.length() && str.charAt(start + i) != ' ')
@@ -478,7 +485,7 @@ public class NaxcraftChatCommand
 			}
 			
 			String name = str.substring(start + 1, start + i);
-			System.out.println(name);
+			plugin.getLogger().log(Level.INFO, name);
 			NaxPlayer p = plugin.playerManager.getPlayer(name);
 			
 			if (p == null)
@@ -487,7 +494,6 @@ public class NaxcraftChatCommand
 			}
 			else
 			{
-				System.out.println("replacing!");
 				str = str.replaceFirst("@" + name, p.getChatName());
 			}
 		}
