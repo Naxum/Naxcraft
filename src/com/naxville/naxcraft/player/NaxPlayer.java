@@ -107,6 +107,15 @@ public class NaxPlayer
 	
 	public boolean isDemiAdminOrPatron()
 	{
+		if(titles == null)
+		{
+			titles = new ArrayList<Title>();
+		}
+		
+		if(hiddenTitles == null)
+		{
+			hiddenTitles = new ArrayList<Title>();
+		}
 		return titles.contains(Title.PATRON) || hiddenTitles.contains(Title.PATRON) || rank.isDemiAdmin();
 	}
 	
