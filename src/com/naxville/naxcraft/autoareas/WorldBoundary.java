@@ -16,6 +16,8 @@ public class WorldBoundary
 	public static final int VARINIUS_EAST = 6000;
 	public static final int VARINIUS_WEST = 6000;
 	
+	public static final int AEROVIA = 2000;
+	
 	public static void handlePlayerMove(PlayerMoveEvent event)
 	{
 		if (event.isCancelled()) { return; }
@@ -44,12 +46,32 @@ public class WorldBoundary
 				bounce(event, 0, 1);
 			}
 		}
+		else if(event.getPlayer().getWorld().getName().startsWith("aerovia"))
+		{
+			Location to = event.getTo();
+			if (to.getX() < -AEROVIA)
+			{
+				bounce(event, -1, 0);
+			}
+			else if (to.getX() > AEROVIA)
+			{
+				bounce(event, 1, 0);
+			}
+			else if (to.getZ() < -AEROVIA)
+			{
+				bounce(event, 0, -1);
+			}
+			else if (to.getZ() > AEROVIA)
+			{
+				bounce(event, 0, 1);
+			}
+		}
 	}
 	
 	private static void bounce(PlayerMoveEvent event, int x, int z)
 	{
 		event.setTo(event.getFrom().subtract(x, 0, z));
-		event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "The world currently ends here. It may expand in the future.");
+		event.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "The world currently ends here. Build some towers!");
 	}
 	
 	public static void handleBlockPlace(BlockPlaceEvent event)

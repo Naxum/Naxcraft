@@ -218,14 +218,15 @@ public class AtmManager
 		openAtms.put(player, chest);
 		plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new AtmChecker(player, plugin, this, atm.owner), 5);
 		
-		eh.a(chest);
+		eh.openContainer(chest);
 	}
 	
 	public VirtualChest accessAccount(Player player)
 	{
 		Set<String> slots = config.getKeys("accounts." + player.getName() + "." + player.getWorld().getName());
+		boolean newAccount = config.isConfigurationSection("accounts."+player.getName()+"."+player.getWorld().getName());
 		
-		if (slots == null)
+		if (slots == null && newAccount)
 		{
 			return createAccount(player);
 		}

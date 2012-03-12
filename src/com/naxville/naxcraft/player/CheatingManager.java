@@ -1,9 +1,15 @@
 package com.naxville.naxcraft.player;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -15,6 +21,7 @@ public class CheatingManager
 {
 	public PlayerManager pm;
 	public List<Material> materials = new ArrayList<Material>();
+	public SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd hh:mm a zzz");
 	
 	public HashMap<Player, MiningManager> miningManagers = new HashMap<Player, MiningManager>();
 	
@@ -28,6 +35,34 @@ public class CheatingManager
 		materials.add(Material.STONE);
 		materials.add(Material.LAPIS_ORE);
 		materials.add(Material.REDSTONE_ORE);
+		
+		dateFormat.setTimeZone(TimeZone.getTimeZone("EST"));
+	}
+	
+	public void loadCheatingManager()
+	{
+		File f = pm.plugin.getDataFolder();
+		
+		if(!f.exists()) f.mkdir();
+		
+		f = new File(f.getPath() + "/cheats");
+		
+		if(!f.exists()) f.mkdir();
+		
+		f = new File(f.getPath() + "/mining.txt");
+		
+		if(!f.exists())
+		{
+			try
+			{
+				System.out.println("New File");
+				f.createNewFile();
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public void handleBlockPlace(BlockPlaceEvent event)
@@ -116,42 +151,122 @@ public class CheatingManager
 		
 		public void print(String reason)
 		{
-			boolean okay = false;
-			
-			for (Material mat : mined.keySet())
+			BufferedWriter out = null;
+			try
 			{
-				if (mat != Material.STONE) okay = true;
+				out = new BufferedWriter(new FileWriter(pm.plugin.getDataFolder().getPath() + "/cheats/mining.txt", true));
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
 			}
 			
-			if (okay)
+			if(out == null)
 			{
-				System.out.println("----------------------");
-				System.out.println("Player " + player.getName() + " Mining Details : Reason: " + reason + " : Elapsed Time: " + ((new Date().getTime() - start.getTime()) / 1000 / 60) + " minutes");
-				
-				System.out.println(" ");
+				boolean okay = false;
 				
 				for (Material mat : mined.keySet())
 				{
-					String message = "";
-					int amount = mined.get(mat);
-					if (mat != Material.STONE && amount > 100)
-					{
-						message += "WARNING: ";
-					}
-					
-					message += mat.toString() + ": " + amount;
-					
-					System.out.println(message);
+					if (mat != Material.STONE) okay = true;
 				}
 				
-				System.out.println("Torches placed: " + torchCount);
-				System.out.println("World: " + player.getWorld().getName());
-				System.out.println("----------------------");
+				if (okay)
+				{
+					System.out.println("----------------------");
+					System.out.println("Player " + player.getName() + " Mining Details : Reason: " + reason + " : Elapsed Time: " + ((new Date().getTime() - start.getTime()) / 1000 / 60) + " minutes");
+					
+					System.out.println(" ");
+					
+					for (Material mat : mined.keySet())
+					{
+						String message = "";
+						int amount = mined.get(mat);
+						if (mat != Material.STONE && amount > 30)
+						{
+							message += "WARNING: ";
+						}
+						
+						message += mat.toString() + ": " + amount;
+						
+						System.out.println(message);
+					}
+					
+					System.out.println("Torches placed: " + torchCount);
+					System.out.println("World: " + player.getWorld().getName());
+					System.out.println("----------------------");
+				}
+				else
+				{
+					System.out.println(player.getName() + " only mined stone.");
+				}
 			}
 			else
 			{
-				System.out.println(player.getName() + " only mined stone.");
-			}
+				try
+				{
+					boolean okay = false;
+					
+					for (Material mat : mined.keySet())
+					{
+						if (mat != Material.STONE) okay = true;
+					}
+					
+					if (okay)
+					{
+						out.newLine();
+						out.write("----------------------");
+						out.newLine();
+						
+						out.write("Mining Details: (Reason: " + reason + ")");
+						out.newLine();
+						
+						out.write("Player: " + player.getName());
+						out.newLine();
+						
+						out.newLine();
+						out.write("Date: " + dateFormat.format(new Date()));
+						
+						out.newLine();
+						out.write("Elapsed Time: " + ((new Date().getTime() - start.getTime()) / 1000 / 60) + " minutes");
+						out.newLine();
+						
+						for (Material mat : mined.keySet())
+						{
+							String message = "";
+							int amount = mined.get(mat);
+							if (mat != Material.STONE && amount > 30)
+							{
+								message += "WARNING: ";
+							}
+							
+							message += mat.toString() + ": " + amount;
+							
+							out.newLine();
+							out.write(message);
+						}
+						
+						out.newLine();
+						out.write("Torches placed: " + torchCount);
+						
+						out.newLine();
+						out.newLine();
+						out.write("World: " + player.getWorld().getName());
+						out.newLine();
+						out.write("----------------------");
+					}
+					else
+					{
+						out.newLine();
+						out.write(player.getName() + " only mined stone.");
+					}
+					
+					out.close();
+				}
+				catch(IOException e)
+				{
+					e.printStackTrace();
+				}
+			}			
 			
 			mined.clear();
 			torchCount = 0;

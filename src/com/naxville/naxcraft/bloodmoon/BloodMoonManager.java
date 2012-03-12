@@ -12,8 +12,8 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.entity.CraftCreeper;
 import org.bukkit.craftbukkit.entity.CraftWolf;
-import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
@@ -83,7 +83,7 @@ public class BloodMoonManager
 		
 		if (event.getSpawnReason() == SpawnReason.NATURAL && bloodMoons.contains(event.getEntity().getWorld()) && BLOODMOON_START < time && time < BLOODMOON_END)
 		{
-			spawnBloodMonsters(event.getLocation(), event.getCreatureType());
+			spawnBloodMonsters(event.getLocation(), event.getEntityType());
 			event.setCancelled(true);
 		}
 	}
@@ -163,7 +163,7 @@ public class BloodMoonManager
 		}
 	}
 	
-	public void spawnBloodMonsters(Location l, CreatureType c)
+	public void spawnBloodMonsters(Location l, EntityType c)
 	{
 		List<BloodCreature> mobs = new ArrayList<BloodCreature>();
 		
@@ -199,37 +199,37 @@ public class BloodMoonManager
 				
 				if (boss == 0)
 				{
-					mobs.add(new BloodBossCreature(CreatureType.GIANT, l));
+					mobs.add(new BloodBossCreature(EntityType.GIANT, l));
 				}
 				else if (boss == 1)
 				{
-					mobs.add(new BloodBossCreature(CreatureType.CREEPER, l));
+					mobs.add(new BloodBossCreature(EntityType.CREEPER, l));
 				}
 				else if (boss == 2)
 				{
-					mobs.add(new BloodBossCreature(CreatureType.GHAST, l));
+					mobs.add(new BloodBossCreature(EntityType.GHAST, l));
 				}
 				
 				if (boss != 2) // if not ghast
 				{
 					for (int i = 0; i < random.nextInt(20) + 10; i++)
 					{
-						mobs.add(new BloodCreature(CreatureType.WOLF, null, l));
+						mobs.add(new BloodCreature(EntityType.WOLF, null, l));
 					}
 					
 					for (int i = 0; i < random.nextInt(10) + 5; i++)
 					{
-						mobs.add(new BloodCreature(CreatureType.SILVERFISH, null, l));
+						mobs.add(new BloodCreature(EntityType.SILVERFISH, null, l));
 					}
 					
 					for (int i = 0; i < random.nextInt(10) + 5; i++)
 					{
-						mobs.add(new BloodCreature(CreatureType.SKELETON, null, l));
+						mobs.add(new BloodCreature(EntityType.SKELETON, null, l));
 					}
 					
 					for (int i = 0; i < random.nextInt(10) + 5; i++)
 					{
-						mobs.add(new BloodCreature(CreatureType.PIG_ZOMBIE, null, l));
+						mobs.add(new BloodCreature(EntityType.PIG_ZOMBIE, null, l));
 					}
 				}
 				break;
@@ -237,53 +237,53 @@ public class BloodMoonManager
 			case WOLF:
 				for (int i = 0; i < random.nextInt(10) + 5; i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.WOLF, null, l));
+					mobs.add(new BloodCreature(EntityType.WOLF, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(3); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.WOLF, CreatureType.SKELETON, l));
+					mobs.add(new BloodCreature(EntityType.WOLF, EntityType.SKELETON, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(6); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.PIG_ZOMBIE, null, l));
+					mobs.add(new BloodCreature(EntityType.PIG_ZOMBIE, null, l));
 				}
 				break;
 			
 			case CAVE_SPIDER:
 				for (int i = 0; i < random.nextInt(5); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SPIDER, null, l));
+					mobs.add(new BloodCreature(EntityType.SPIDER, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(6); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.PIG_ZOMBIE, null, l));
+					mobs.add(new BloodCreature(EntityType.PIG_ZOMBIE, null, l));
 				}
 				
-				mobs.add(new BloodCreature(CreatureType.CAVE_SPIDER, null, l));
+				mobs.add(new BloodCreature(EntityType.CAVE_SPIDER, null, l));
 				break;
 			
 			case CREEPER:
 				for (int i = 0; i < random.nextInt(10); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SPIDER, null, l));
+					mobs.add(new BloodCreature(EntityType.SPIDER, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(2); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.CREEPER, null, l));
+					mobs.add(new BloodCreature(EntityType.CREEPER, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(2); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SPIDER, CreatureType.CREEPER, l));
+					mobs.add(new BloodCreature(EntityType.SPIDER, EntityType.CREEPER, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(2); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.CAVE_SPIDER, null, l));
+					mobs.add(new BloodCreature(EntityType.CAVE_SPIDER, null, l));
 				}
 				break;
 			
@@ -291,63 +291,63 @@ public class BloodMoonManager
 				// TODO: Add endermoons?!
 				for (int i = 0; i < random.nextInt(20); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SILVERFISH, null, l));
+					mobs.add(new BloodCreature(EntityType.SILVERFISH, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(6); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.PIG_ZOMBIE, null, l));
+					mobs.add(new BloodCreature(EntityType.PIG_ZOMBIE, null, l));
 				}
 				break;
 			
 			case SKELETON:
 				for (int i = 0; i < random.nextInt(10); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SKELETON, null, l));
+					mobs.add(new BloodCreature(EntityType.SKELETON, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(3); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SPIDER, CreatureType.SKELETON, l));
+					mobs.add(new BloodCreature(EntityType.SPIDER, EntityType.SKELETON, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(6); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.PIG_ZOMBIE, null, l));
+					mobs.add(new BloodCreature(EntityType.PIG_ZOMBIE, null, l));
 				}
 				break;
 			
 			case SPIDER:
 				for (int i = 0; i < random.nextInt(10); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SPIDER, null, l));
+					mobs.add(new BloodCreature(EntityType.SPIDER, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(2); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.CAVE_SPIDER, null, l));
+					mobs.add(new BloodCreature(EntityType.CAVE_SPIDER, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(5); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SILVERFISH, null, l));
+					mobs.add(new BloodCreature(EntityType.SILVERFISH, null, l));
 				}
 				break;
 			
 			case ZOMBIE:
 				for (int i = 0; i < random.nextInt(10); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.ZOMBIE, null, l));
+					mobs.add(new BloodCreature(EntityType.ZOMBIE, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(10); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SILVERFISH, null, l));
+					mobs.add(new BloodCreature(EntityType.SILVERFISH, null, l));
 				}
 				
 				for (int i = 0; i < random.nextInt(6); i++)
 				{
-					mobs.add(new BloodCreature(CreatureType.SLIME, null, l));
+					mobs.add(new BloodCreature(EntityType.SLIME, null, l));
 				}
 				break;
 			
@@ -366,7 +366,7 @@ public class BloodMoonManager
 	{
 		if (c instanceof BloodBossCreature)
 		{
-			if (c.c == CreatureType.CREEPER)
+			if (c.c == EntityType.CREEPER)
 			{
 				LivingEntity e = c.l.getWorld().spawnCreature(c.l, c.c);
 				
@@ -587,11 +587,11 @@ public class BloodMoonManager
 	
 	public class BloodCreature
 	{
-		public CreatureType c;
-		public CreatureType riding;
+		public EntityType c;
+		public EntityType riding;
 		public Location l;
 		
-		public BloodCreature(CreatureType c, CreatureType riding, Location l)
+		public BloodCreature(EntityType c, EntityType riding, Location l)
 		{
 			this.c = c;
 			this.riding = riding;
@@ -605,7 +605,7 @@ public class BloodMoonManager
 		
 		int id;
 		
-		public BloodBossCreature(CreatureType c, Location l)
+		public BloodBossCreature(EntityType c, Location l)
 		{
 			super(c, null, l);
 		}

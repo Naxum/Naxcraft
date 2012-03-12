@@ -2,7 +2,7 @@ package com.naxville.naxcraft.admin;
 
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.CreatureType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wolf;
@@ -59,7 +59,7 @@ public class NaxcraftSpawnMobCommand {
 			
 			if(name.equalsIgnoreCase("angrywolf")){
 				
-				CreatureType creature = CreatureType.WOLF;
+				EntityType creature = EntityType.WOLF;
 				
 				for(int i = 0; i < amount; i++){
 					LivingEntity le = player.getLocation().getWorld().spawnCreature(location, creature);
@@ -69,8 +69,8 @@ public class NaxcraftSpawnMobCommand {
 				
 			} else if (name.equalsIgnoreCase("jockey") || name.equalsIgnoreCase("spiderjockey")){
 				for(int i = 0; i < amount; i++){
-					LivingEntity le = player.getLocation().getWorld().spawnCreature(location, CreatureType.SPIDER);
-					LivingEntity le2 = player.getLocation().getWorld().spawnCreature(le.getLocation(), CreatureType.SKELETON);
+					LivingEntity le = player.getLocation().getWorld().spawnCreature(location, EntityType.SPIDER);
+					LivingEntity le2 = player.getLocation().getWorld().spawnCreature(le.getLocation(), EntityType.SKELETON);
 					
 					le.setPassenger(le2);
 				}
@@ -86,30 +86,31 @@ public class NaxcraftSpawnMobCommand {
 				
 				String name2 = cap2 + rest2;
 				
-				CreatureType creature1 = CreatureType.fromName(name1);
-				CreatureType creature2 = CreatureType.fromName(name2);
-				
-				if(creature1 == null || creature2 == null){
-					player.sendMessage(Naxcraft.ERROR_COLOR + name + " is not a creature or " + creature2.getName() + " is not a creature!");
+				if(EntityType.fromName(name1) == null || EntityType.fromName(name2) == null){
+					player.sendMessage(Naxcraft.ERROR_COLOR + name1 + " is not a creature or " + name2 + " is not a creature!");
 					return true;
 				}
 				
 				for(int i = 0; i < amount; i++){
-					LivingEntity le = player.getLocation().getWorld().spawnCreature(location, CreatureType.fromName(name1));
-					LivingEntity le2 = player.getLocation().getWorld().spawnCreature(le.getLocation(), CreatureType.fromName(name2));
+					//LivingEntity le = player.getLocation().getWorld().spawnCreature(location, CreatureType.fromName(name1));
+					LivingEntity le = player.getLocation().getWorld().spawnCreature(location, EntityType.fromName(name1));
+					//LivingEntity le2 = player.getLocation().getWorld().spawnCreature(le.getLocation(), CreatureType.fromName(name2));
+					LivingEntity le2 = player.getLocation().getWorld().spawnCreature(location, EntityType.fromName(name2));
 					
 					le.setPassenger(le2);
 				}
 				
 			} else {
-				CreatureType creature = CreatureType.fromName(name);
-				if(creature == null){
+				//CreatureType creature = CreatureType.fromName(name);
+				EntityType type = EntityType.fromName(name);
+				if(type == null){
 					player.sendMessage(Naxcraft.ERROR_COLOR + name + " is not a creature!");
 					return true;
 				}
 				
 				for(int i = 0; i < amount; i++){
-					player.getLocation().getWorld().spawnCreature(location, creature);
+					//player.getLocation().getWorld().spawnCreature(location, creature);
+					player.getLocation().getWorld().spawnCreature(location, type);
 				}
 			}
 			

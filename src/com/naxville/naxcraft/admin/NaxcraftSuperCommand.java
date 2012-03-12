@@ -89,7 +89,7 @@ public class NaxcraftSuperCommand {
 					EntityPlayer eh = ((CraftPlayer)sender).getHandle();
 
 					// Chest time!
-					eh.a(lc);
+					eh.openContainer(lc);
 					
 					return true;
 				}

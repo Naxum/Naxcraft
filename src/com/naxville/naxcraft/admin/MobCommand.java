@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.block.CreatureSpawner;
-import org.bukkit.entity.CreatureType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
 
@@ -14,7 +14,7 @@ import com.naxville.naxcraft.Naxcraft;
 public class MobCommand
 {
 	public Naxcraft plugin;
-	public Map<Player, CreatureType> list = new HashMap<Player, CreatureType>();
+	public Map<Player, EntityType> list = new HashMap<Player, EntityType>();
 	
 	public MobCommand(Naxcraft plugin)
 	{
@@ -25,14 +25,14 @@ public class MobCommand
 	{
 		if (args.length == 0)
 		{
-			list.put(player, CreatureType.PIG);
+			list.put(player, EntityType.PIG);
 		}
 		else
 		{
-			CreatureType type = null;
+			EntityType type = null;
 			try
 			{
-				type = CreatureType.valueOf(args[0].toUpperCase());
+				type = EntityType.valueOf(args[0].toUpperCase());
 			}
 			catch (Exception e)
 			{
@@ -43,7 +43,7 @@ public class MobCommand
 				player.sendMessage(Naxcraft.ERROR_COLOR + "Error: " + args[0] + " is not a creature type.");
 				String types = "Types: ";
 				
-				for (CreatureType i : CreatureType.values())
+				for (EntityType i : EntityType.values())
 				{
 					types += i.toString().toLowerCase() + ", ";
 				}
@@ -53,7 +53,7 @@ public class MobCommand
 			}
 			else
 			{
-				if (type == CreatureType.WOLF || type == CreatureType.GHAST || type == CreatureType.GIANT)
+				if (type == EntityType.WOLF || type == EntityType.GHAST || type == EntityType.GIANT)
 				{
 					if (!SuperManager.isSuper(player))
 					{
@@ -83,8 +83,8 @@ public class MobCommand
 			if (list.containsKey(e.getPlayer()))
 			{
 				CreatureSpawner x = (CreatureSpawner) e.getBlock().getState();
-				x.setCreatureType(list.get(e.getPlayer()));
-				e.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "Creature Spawner changed to " + Naxcraft.DEFAULT_COLOR + x.getCreatureType().toString() + Naxcraft.MSG_COLOR + " spawner.");
+				x.setSpawnedType(list.get(e.getPlayer()));
+				e.getPlayer().sendMessage(Naxcraft.MSG_COLOR + "Creature Spawner changed to " + Naxcraft.DEFAULT_COLOR + x.getSpawnedType().toString() + Naxcraft.MSG_COLOR + " spawner.");
 			}
 		}
 	}

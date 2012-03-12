@@ -8,6 +8,7 @@ import net.minecraft.server.InventoryLargeChest;
 
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -101,7 +102,7 @@ public class SuperManager
 					EntityPlayer eh = ((CraftPlayer) sender).getHandle();
 					
 					// Chest time!
-					eh.a(lc);
+					eh.openContainer(lc);
 					
 					return true;
 				}
@@ -335,12 +336,24 @@ public class SuperManager
 			World world = plugin.getServer().getWorld(args[0]);
 			
 			if (world == null)
+			{				
+				for(String f : plugin.getServer().getWorldContainer().list())
+				{
+					if(f.equalsIgnoreCase(args[0]))
+					{
+						world = plugin.getServer().createWorld(new WorldCreator(args[0].toLowerCase()));
+					}
+				}
+			}
+			
+			
+			if(world != null)
 			{
-				player.sendMessage(Naxcraft.MSG_COLOR + args[0] + " is not a loaded world.");
+				player.teleport(world.getSpawnLocation());
 			}
 			else
 			{
-				player.teleport(world.getSpawnLocation());
+				player.sendMessage(Naxcraft.MSG_COLOR + args[0] + " is not a loaded world.");
 			}
 		}
 		else

@@ -244,7 +244,6 @@ public class ShopManager
 			
 			if (world == null)
 			{
-				System.out.println("null world");
 				continue;
 			}
 			

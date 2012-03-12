@@ -619,7 +619,6 @@ public class MailManager
 		
 		if (messageIDs != null)
 		{
-			System.out.println(messageIDs);
 			
 			for (String id : messageIDs)
 			{

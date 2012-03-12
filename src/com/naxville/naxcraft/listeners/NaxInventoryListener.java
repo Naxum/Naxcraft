@@ -38,18 +38,18 @@ public class NaxInventoryListener implements Listener
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFurnaceBurn(FurnaceBurnEvent event)
 	{
-		AutoBase base = plugin.autoAreaManager.getBase(event.getFurnace());
+		AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
 		
 		if (base != null && base.hasFlag(Flag.FORGES))
 		{
-			if (!forges.contains(event.getFurnace().getLocation()))
+			if (!forges.contains(event.getBlock().getLocation()))
 			{
-				forgesToAdd.add(event.getFurnace().getLocation());
+				forgesToAdd.add(event.getBlock().getLocation());
 			}
 			
 			if (event.getFuel().getType() == Material.LAVA_BUCKET)
 			{
-				Furnace f = (Furnace) event.getFurnace().getState();
+				Furnace f = (Furnace) event.getBlock().getState();
 				
 				f.setBurnTime((short) 600);
 				event.setCancelled(true);
@@ -60,13 +60,13 @@ public class NaxInventoryListener implements Listener
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFurnaceSmelt(FurnaceSmeltEvent event)
 	{
-		if (forges.contains(event.getFurnace().getLocation())) return;
+		if (forges.contains(event.getBlock().getLocation())) return;
 		
-		AutoBase base = plugin.autoAreaManager.getBase(event.getFurnace());
+		AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
 		
 		if (base != null && base.hasFlag(Flag.FORGES))
 		{
-			forgesToAdd.add(event.getFurnace().getLocation());
+			forgesToAdd.add(event.getBlock().getLocation());
 		}
 	}
 	

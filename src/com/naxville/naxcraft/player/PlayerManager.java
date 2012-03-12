@@ -784,7 +784,7 @@ public class PlayerManager
 			
 			OfflinePlayer target = plugin.getServer().getOfflinePlayer(np.name);
 			
-			System.out.println(target.getFirstPlayed() + ", " + target.getLastPlayed());
+			//System.out.println(target.getFirstPlayed() + ", " + target.getLastPlayed());
 			
 			String started = timeAgo(target.getFirstPlayed());
 			String last = timeAgo(target.getLastPlayed());

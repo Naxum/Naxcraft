@@ -613,9 +613,8 @@ public class Naxcraft extends JavaPlugin
 	
 	private void loadFiles()
 	{
-		// getServer().createWorld("old_naxville", Environment.NORMAL);
 		//getServer().createWorld(new WorldCreator("naxville"));
-		// getServer().createWorld(new WorldCreator("galingale"));
+		//getServer().createWorld(new WorldCreator("old_naxville"));
 		
 		if (!shopManager.loadShops()) this.log.log(Level.SEVERE, "Naxcraft Startup: Error loading shops.");
 		
@@ -624,6 +623,7 @@ public class Naxcraft extends JavaPlugin
 		atmManager.loadAtms();
 		autoAreaManager.loadAutoAreas();
 		playerManager.loadPlayerData();
+		playerManager.cheatingManager.loadCheatingManager();
 		mailManager.loadMessages();
 		cityManager.loadFile();
 		displayShopManager.loadShops();

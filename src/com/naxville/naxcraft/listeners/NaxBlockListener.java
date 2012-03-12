@@ -27,6 +27,7 @@ import org.bukkit.inventory.ItemStack;
 
 import com.naxville.naxcraft.NaxColor;
 import com.naxville.naxcraft.Naxcraft;
+import com.naxville.naxcraft.admin.SuperManager;
 import com.naxville.naxcraft.autoareas.AutoAreaManager.Flag;
 import com.naxville.naxcraft.autoareas.AutoBase;
 import com.naxville.naxcraft.autoareas.WorldBoundary;
@@ -250,6 +251,12 @@ public class NaxBlockListener implements Listener
 	{
 		if (event.isCancelled()) return;
 		
+		if(event.getBlock().getWorld().getName().equalsIgnoreCase("old_naxville") && !SuperManager.isSuper(event.getPlayer()))
+		{
+			event.getPlayer().sendMessage(NaxColor.MSG + "Editing this world is forbidden!");
+			event.setCancelled(true);
+		}
+		
 		plugin.autoAreaManager.handleBlockBreak(event);
 		
 		if (event.isCancelled()) return;
@@ -284,6 +291,12 @@ public class NaxBlockListener implements Listener
 	public void onBlockPlace(BlockPlaceEvent event)
 	{
 		if (event.isCancelled()) return;
+		
+		if(event.getBlock().getWorld().getName().equalsIgnoreCase("old_naxville") && !SuperManager.isSuper(event.getPlayer()))
+		{
+			event.getPlayer().sendMessage(NaxColor.MSG + "Editing this world is forbidden!");
+			event.setCancelled(true);
+		}
 		
 		plugin.autoAreaManager.handleBlockPlace(event);
 		plugin.playerManager.cheatingManager.handleBlockPlace(event);

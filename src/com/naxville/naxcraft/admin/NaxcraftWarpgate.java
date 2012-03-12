@@ -66,6 +66,8 @@ public class NaxcraftWarpgate
 			String hereName = config.getString(id + ".signText");
 			boolean on = config.getBoolean(id + ".on");
 			
+			if(!config.isConfigurationSection(id + ".world")) continue;
+			
 			World world = plugin.getServer().getWorld(config.getString(id + ".world"));
 			
 			if (world == null) continue;
