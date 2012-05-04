@@ -886,15 +886,8 @@ public class PlayerManager
 			String prefix = "players." + key;
 			
 			if (config.getString(prefix + ".rank") == null) continue;
-			int color = -1;
-			if(!config.isConfigurationSection(prefix+".color"))
-			{
-				color = -1;
-			}
-			else
-			{
-				color = config.getInt(prefix + ".color");
-			}
+			int color = config.getInt(prefix + ".color");
+			
 			PlayerRank rank = PlayerRank.getRank(config.getString(prefix + ".rank"));
 			
 			Set<String> homes = config.getKeys(prefix + ".homes");
@@ -936,12 +929,12 @@ public class PlayerManager
 					if (world != null)
 					{
 						homesList.put(id, new Location
-								(
-										world,
-										config.getDouble(prefix + ".homes." + id + ".x"),
-										config.getDouble(prefix + ".homes." + id + ".y"),
-										config.getDouble(prefix + ".homes." + id + ".z")
-								));
+						(
+							world,
+							config.getDouble(prefix + ".homes." + id + ".x"),
+							config.getDouble(prefix + ".homes." + id + ".y"),
+							config.getDouble(prefix + ".homes." + id + ".z")
+						));
 					}
 					
 				}
