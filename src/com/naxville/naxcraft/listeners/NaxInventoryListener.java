@@ -16,8 +16,6 @@ import org.bukkit.event.inventory.FurnaceSmeltEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.naxville.naxcraft.Naxcraft;
-import com.naxville.naxcraft.autoareas.AutoAreaManager.Flag;
-import com.naxville.naxcraft.autoareas.AutoBase;
 
 public class NaxInventoryListener implements Listener
 {
@@ -32,12 +30,13 @@ public class NaxInventoryListener implements Listener
 	
 	public void startForgeSmelter()
 	{
-		plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new ForgeSmelter(), 100L, 5L);
+		//plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, new ForgeSmelter(), 100L, 5L);
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFurnaceBurn(FurnaceBurnEvent event)
 	{
+		/*
 		AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
 		
 		if (base != null && base.hasFlag(Flag.FORGES))
@@ -55,11 +54,13 @@ public class NaxInventoryListener implements Listener
 				event.setCancelled(true);
 			}
 		}
+		*/
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFurnaceSmelt(FurnaceSmeltEvent event)
 	{
+		/*
 		if (forges.contains(event.getBlock().getLocation())) return;
 		
 		AutoBase base = plugin.autoAreaManager.getBase(event.getBlock());
@@ -68,6 +69,7 @@ public class NaxInventoryListener implements Listener
 		{
 			forgesToAdd.add(event.getBlock().getLocation());
 		}
+		*/
 	}
 	
 	public class ForgeSmelter implements Runnable
@@ -81,7 +83,7 @@ public class NaxInventoryListener implements Listener
 				
 				if (l.getBlock() == null)
 				{
-					i.remove();;
+					i.remove();
 					continue;
 				}
 				
@@ -89,7 +91,7 @@ public class NaxInventoryListener implements Listener
 				
 				if (b.getType() != Material.FURNACE && b.getType() != Material.BURNING_FURNACE)
 				{
-					i.remove();;
+					i.remove();
 					continue;
 				}
 				
@@ -101,7 +103,7 @@ public class NaxInventoryListener implements Listener
 				
 				if (source == null || source.getAmount() == 0 || feul == null || feul.getAmount() == 0 || f.getBurnTime() == 0)
 				{
-					i.remove();;
+					i.remove();
 					continue;
 				}
 				
@@ -116,7 +118,14 @@ public class NaxInventoryListener implements Listener
 				}
 			}
 			
-			forges.addAll(forgesToAdd);
+			//forges.addAll(forgesToAdd);
+			
+			for(Location l : forgesToAdd)
+			{
+				if(!forges.contains(l))
+					forges.add(l);
+			}
+			
 			forgesToAdd.clear();
 		}
 	}

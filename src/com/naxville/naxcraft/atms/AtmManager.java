@@ -226,7 +226,7 @@ public class AtmManager
 		Set<String> slots = config.getKeys("accounts." + player.getName() + "." + player.getWorld().getName());
 		boolean newAccount = config.isConfigurationSection("accounts."+player.getName()+"."+player.getWorld().getName());
 		
-		if (slots == null && newAccount)
+		if (slots == null || newAccount)
 		{
 			return createAccount(player);
 		}
